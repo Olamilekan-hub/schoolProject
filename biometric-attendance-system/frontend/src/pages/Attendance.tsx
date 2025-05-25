@@ -4,16 +4,12 @@ import {
   Plus, 
   Calendar, 
   Clock, 
-  Users, 
   UserCheck, 
   Link as LinkIcon,
   QrCode,
   Play,
-  Pause,
   Square,
   RefreshCw,
-  Search,
-  Filter,
   Download,
   Eye,
   Edit,
@@ -21,23 +17,20 @@ import {
   Copy,
   Share2
 } from 'lucide-react'
-import { format, addDays, isToday, isPast, isFuture } from 'date-fns'
+import { format, isToday, isPast } from 'date-fns'
 import toast from 'react-hot-toast'
 
-import { useAttendanceSessions, useCreateSession, useUpdateSessionStatus } from '../hooks/useAttendance'
+import { useAttendanceSessions, useUpdateSessionStatus } from '../hooks/useAttendance'
 import { useCourses } from '../hooks/useCourses'
-import type { AttendanceSession, CreateAttendanceSessionData, SessionStatus } from '../types/attendance'
-import type { Course } from '../types/course'
+import type { AttendanceSession } from '../types/attendance'
 
 import Button from '../components/UI/Button'
 import Card from '../components/UI/Card'
 import Badge from '../components/UI/Badge'
 import Modal from '../components/UI/Modal'
 import Table from '../components/UI/Table'
-import Input from '../components/UI/Input'
 import Select from '../components/UI/Select'
 import SearchInput from '../components/UI/SearchInput'
-import LoadingSpinner from '../components/UI/LoadingSpinner'
 import AttendanceSessionForm from '../components/Attendance/AttendanceSessionForm'
 import AttendanceMarking from '../components/Attendance/AttendanceMarking'
 import AttendanceLiveView from '../components/Attendance/AttendanceLiveView'
@@ -62,7 +55,7 @@ const Attendance: React.FC = () => {
   // Data fetching
   const { data: sessions, isLoading: sessionsLoading, refetch } = useAttendanceSessions()
   const { data: courses } = useCourses()
-  const { mutate: createSession } = useCreateSession()
+//   const { mutate: createSession } = useCreateSession()
   const { mutate: updateSessionStatus } = useUpdateSessionStatus()
 
   // Filter sessions based on current filters

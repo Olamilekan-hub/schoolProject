@@ -49,6 +49,13 @@ export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'MANU
 
 export interface CreateAttendanceSessionData {
   courseId: string
+  sessionName: string
+  sessionDate: string
+  startTime: string
+  endTime?: string
+  allowRemoteMarking?: boolean
+  attendanceLinkToken?: string
+  linkExpiresAt?: string
 }
 
 export type VerificationMethod = 'BIOMETRIC' | 'MANUAL' | 'LINK';
