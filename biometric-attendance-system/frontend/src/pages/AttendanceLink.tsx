@@ -126,33 +126,33 @@ const AttendanceLink: React.FC = () => {
     }
   }
 
-//   const markAttendance = async (biometricData?: string) => {
-//     if (!session || !studentInfo) return
+  const markAttendance = async (biometricData?: string) => {
+    if (!session || !studentInfo) return
 
-//     try {
-//       setMarking(true)
+    try {
+      setMarking(true)
       
-//     //   const result = await attendanceService.markAttendanceByLink(token!, {
-//     //     studentId: studentInfo.id,
-//     //     biometricData,
-//     //     verificationMethod: biometricData ? 'BIOMETRIC' : 'LINK'
-//     //   })
+      const result = await attendanceService.markAttendanceByLink(token!, {
+        studentId: studentInfo.id,
+        biometricData,
+        verificationMethod: biometricData ? 'BIOMETRIC' : 'LINK'
+      })
 
-//       if (result.success) {
-//         setStep('success')
-//         toast.success(result.message)
-//       } else {
-//         setStep('error')
-//         setError(result.message)
-//       }
-//     } catch (error: any) {
-//       setStep('error')
-//       setError(error.message || 'Failed to mark attendance')
-//       toast.error(error.message || 'Failed to mark attendance')
-//     } finally {
-//       setMarking(false)
-//     }
-//   }
+      if (result.success) {
+        setStep('success')
+        toast.success(result.message)
+      } else {
+        setStep('error')
+        setError(result.message)
+      }
+    } catch (error: any) {
+      setStep('error')
+      setError(error.message || 'Failed to mark attendance')
+      toast.error(error.message || 'Failed to mark attendance')
+    } finally {
+      setMarking(false)
+    }
+  }
 
   const renderContent = () => {
     switch (step) {

@@ -17,14 +17,17 @@ export default defineConfig({
       '@/context': path.resolve(__dirname, './src/context'),
     },
   },
+  css: {
+    postcss: './postcss.config.js',
+  },
   server: {
     port: 3000,
     host: true,
-    https: {
-      // For biometric features - you'll need SSL certificates
-      key: './certs/key.pem',
-      cert: './certs/cert.pem',
-    },
+    // Remove HTTPS for development unless you have proper certificates
+    // https: {
+    //   key: './certs/key.pem',
+    //   cert: './certs/cert.pem',
+    // },
   },
   build: {
     outDir: 'dist',

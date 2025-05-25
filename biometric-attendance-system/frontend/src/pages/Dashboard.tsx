@@ -68,7 +68,7 @@ const Dashboard: React.FC = () => {
   const attendanceTrend = dashboardData?.attendanceTrend || []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pl-20">
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg p-6 text-white">
         <div className="flex items-center justify-between">
