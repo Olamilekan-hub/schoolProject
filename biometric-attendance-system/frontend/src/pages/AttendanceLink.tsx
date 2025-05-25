@@ -1,14 +1,15 @@
 // src/pages/AttendanceLink.tsx
 import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { 
+    useParams,
+    //  useNavigate
+} from 'react-router-dom'
 import { 
   Fingerprint, 
   User, 
-  Calendar, 
-  Clock, 
+  Calendar,
   CheckCircle,
-  XCircle,
-  AlertTriangle
+  XCircle
 } from 'lucide-react'
 
 // import { attendanceService } from '../services/attendance'
@@ -24,7 +25,7 @@ import toast from 'react-hot-toast'
 
 const AttendanceLink: React.FC = () => {
   const { token } = useParams<{ token: string }>()
-  const navigate = useNavigate()
+//   const navigate = useNavigate()
   
   const [session, setSession] = useState<AttendanceSession | null>(null)
   const [loading, setLoading] = useState(true)

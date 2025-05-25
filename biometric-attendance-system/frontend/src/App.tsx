@@ -15,7 +15,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Students from './pages/Students'
-// import Attendance from './pages/Attendance'
+import Attendance from './pages/Attendance'
 import Reports from './pages/Reports'
 import Profile from './pages/Profile'
 import AttendanceLink from './pages/AttendanceLink'
@@ -63,7 +63,7 @@ function App() {
                   <Route index element={<Dashboard />} />
                   <Route path="dashboard" element={<Dashboard />} />
                   <Route path="students" element={<Students />} />
-                  {/* <Route path="attendance" element={<Attendance />} /> */}
+                  <Route path="attendance" element={<Attendance />} />
                   <Route path="reports" element={<Reports />} />
                   <Route path="profile" element={<Profile />} />
                 </Route>
