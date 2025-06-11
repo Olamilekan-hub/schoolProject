@@ -181,8 +181,8 @@ process.on("SIGINT", async () => {
 
 // Start server
 const PORT = config.PORT || 5000;
-server.listen(PORT, () => {
-  logger.info(`🚀 Server running on https://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  logger.info(`🚀 Server running on port ${PORT}`);
   logger.info(`📊 Environment: ${config.NODE_ENV}`);
   logger.info(`🔒 CORS Origin: ${config.CORS_ORIGIN}`);
 });
