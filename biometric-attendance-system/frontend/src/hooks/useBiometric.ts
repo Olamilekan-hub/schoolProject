@@ -1,4 +1,4 @@
-// src/hooks/useBiometric.ts
+// src/hooks/useBiometric.ts - FIXED VERSION
 import { useState, useEffect, useCallback } from 'react'
 import type { BiometricScanResult, BiometricDevice } from '../types/biometric'
 
@@ -15,6 +15,7 @@ interface UseBiometricReturn {
   startScan: (options?: UseBiometricOptions) => Promise<BiometricScanResult>
   stopScan: () => void
   getDeviceInfo: () => Promise<BiometricDevice | null>
+  enrollFingerprint: (userId: string) => Promise<BiometricScanResult>
 }
 
 export const useBiometric = (): UseBiometricReturn => {
@@ -29,32 +30,36 @@ export const useBiometric = (): UseBiometricReturn => {
 
   const checkBiometricSupport = useCallback(async () => {
     try {
+      // Check if we're on HTTPS (required for WebAuthn)
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        console.warn('Biometric authentication requires HTTPS')
+        setIsSupported(false)
+        return
+      }
+
       // Check for WebAuthn support
       const hasWebAuthn = 'credentials' in navigator && 'create' in navigator.credentials
-      
-      // Check for PublicKeyCredential support
       const hasPublicKey = 'PublicKeyCredential' in window
-      
-      // Check for user gesture requirement
-      const hasUserActivation = 'userActivation' in navigator
-      
-      const supported = hasWebAuthn && hasPublicKey
-      setIsSupported(supported)
 
-      if (supported) {
-        // Check if biometric authentication is available
-        try {
-          const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-          setIsAvailable(available)
-          
-          if (available) {
-            const info = await getDeviceInfo()
-            setDeviceInfo(info)
-          }
-        } catch (error) {
-          console.warn('Could not check biometric availability:', error)
-          setIsAvailable(false)
+      if (!hasWebAuthn || !hasPublicKey) {
+        setIsSupported(false)
+        return
+      }
+
+      setIsSupported(true)
+
+      // Check if platform authenticator (Windows Hello, TouchID, etc.) is available
+      try {
+        const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+        setIsAvailable(available)
+        
+        if (available) {
+          const info = await getDeviceInfo()
+          setDeviceInfo(info)
         }
+      } catch (error) {
+        console.warn('Could not check biometric availability:', error)
+        setIsAvailable(false)
       }
     } catch (error) {
       console.error('Error checking biometric support:', error)
@@ -67,25 +72,20 @@ export const useBiometric = (): UseBiometricReturn => {
     try {
       const userAgent = navigator.userAgent
       const platform = navigator.platform
-      const vendor = navigator.vendor || 'Unknown'
       
-      // Detect device capabilities
-      const touchSupport = 'ontouchstart' in window || navigator.maxTouchPoints > 0
-      const biometricSupport = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+      // Detect Windows Hello specifically
+      const isWindows = platform.toLowerCase().includes('win')
+      const hasWindowsHello = isWindows && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
       
       return {
         id: 'platform-authenticator',
-        name: 'Platform Authenticator',
+        name: isWindows ? 'Windows Hello' : 'Platform Authenticator',
         type: 'FINGERPRINT',
-        manufacturer: vendor,
+        manufacturer: isWindows ? 'Microsoft' : 'Unknown',
         model: platform,
-        serialNumber: 'unknown',
-        isConnected: biometricSupport,
-        capabilities: [
-          'fingerprint',
-          touchSupport ? 'touch' : 'no-touch',
-          'webauthn'
-        ]
+        serialNumber: 'platform-device',
+        isConnected: hasWindowsHello,
+        capabilities: ['fingerprint', 'platform-authenticator', 'webauthn']
       }
     } catch (error) {
       console.error('Error getting device info:', error)
@@ -93,21 +93,9 @@ export const useBiometric = (): UseBiometricReturn => {
     }
   }, [])
 
-  const startScan = useCallback(async (options: UseBiometricOptions = {}): Promise<BiometricScanResult> => {
-    const {
-      timeout = 30000,
-      allowFallback = false,
-      userPrompt = 'Please verify your identity using biometric authentication'
-    } = options
-
-    if (!isSupported) {
-      return {
-        success: false,
-        message: 'Biometric authentication is not supported on this device'
-      }
-    }
-
-    if (!isAvailable) {
+  // Enroll a new fingerprint (create credential)
+  const enrollFingerprint = useCallback(async (userId: string): Promise<BiometricScanResult> => {
+    if (!isSupported || !isAvailable) {
       return {
         success: false,
         message: 'Biometric authentication is not available'
@@ -119,93 +107,166 @@ export const useBiometric = (): UseBiometricReturn => {
       const challenge = new Uint8Array(32)
       crypto.getRandomValues(challenge)
 
-      // Create credential request options
+      // User ID as bytes
+      const userIdBytes = new TextEncoder().encode(userId)
+
+      const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
+        challenge,
+        rp: {
+          name: 'Biometric Attendance System',
+          id: window.location.hostname
+        },
+        user: {
+          id: userIdBytes,
+          name: userId,
+          displayName: `Student ${userId}`
+        },
+        pubKeyCredParams: [
+          { alg: -7, type: 'public-key' },  // ES256
+          { alg: -257, type: 'public-key' } // RS256
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform', // Use platform authenticator (Windows Hello)
+          userVerification: 'required',
+          requireResidentKey: false
+        },
+        timeout: 60000,
+        attestation: 'direct'
+      }
+
+      const credential = await navigator.credentials.create({
+        publicKey: publicKeyCredentialCreationOptions
+      }) as PublicKeyCredential
+
+      if (credential && credential.response) {
+        const response = credential.response as AuthenticatorAttestationResponse
+        
+        // Convert credential ID to base64 for storage
+        const credentialId = Array.from(new Uint8Array(credential.rawId))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('')
+
+        // Get attestation object for template storage
+        const attestationObject = Array.from(new Uint8Array(response.attestationObject))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('')
+
+        return {
+          success: true,
+          message: 'Fingerprint enrolled successfully',
+          templateData: attestationObject,
+          qualityScore: 95, // High quality for platform authenticators
+          confidence: 100,
+          deviceInfo: await getDeviceInfo()
+        }
+      }
+
+      return {
+        success: false,
+        message: 'Failed to create credential'
+      }
+    } catch (error: any) {
+      let message = 'Fingerprint enrollment failed'
+      
+      if (error.name === 'NotAllowedError') {
+        message = 'User denied permission or cancelled enrollment'
+      } else if (error.name === 'NotSupportedError') {
+        message = 'Biometric authentication is not supported'
+      } else if (error.name === 'SecurityError') {
+        message = 'Security error - ensure you are using HTTPS'
+      } else if (error.name === 'AbortError') {
+        message = 'Enrollment was cancelled'
+      }
+
+      return {
+        success: false,
+        message,
+        deviceInfo: await getDeviceInfo()
+      }
+    }
+  }, [isSupported, isAvailable, getDeviceInfo])
+
+  // Verify fingerprint (authenticate with existing credential)
+  const startScan = useCallback(async (options: UseBiometricOptions = {}): Promise<BiometricScanResult> => {
+    const { timeout = 30000, userPrompt = 'Please verify your fingerprint' } = options
+
+    if (!isSupported || !isAvailable) {
+      return {
+        success: false,
+        message: 'Biometric authentication is not available'
+      }
+    }
+
+    try {
+      // Generate challenge
+      const challenge = new Uint8Array(32)
+      crypto.getRandomValues(challenge)
+
       const publicKeyCredentialRequestOptions: PublicKeyCredentialRequestOptions = {
         challenge,
         timeout,
         userVerification: 'required',
-        allowCredentials: []
+        allowCredentials: [] // Allow any registered credential
       }
 
-      // Request biometric authentication
-      const credential = await navigator.credentials.create({
-        publicKey: {
-          challenge,
-          rp: {
-            name: 'Biometric Attendance System',
-            id: window.location.hostname
-          },
-          user: {
-            id: new TextEncoder().encode('user-id'),
-            name: 'user@example.com',
-            displayName: 'User'
-          },
-          pubKeyCredParams: [
-            { alg: -7, type: 'public-key' },
-            { alg: -257, type: 'public-key' }
-          ],
-          authenticatorSelection: {
-            authenticatorAttachment: 'platform',
-            userVerification: 'required',
-            requireResidentKey: false
-          },
-          timeout
-        }
+      const assertion = await navigator.credentials.get({
+        publicKey: publicKeyCredentialRequestOptions
       }) as PublicKeyCredential
 
-      if (credential) {
-        // Extract biometric data (in real implementation, this would be processed differently)
-        const response = credential.response as AuthenticatorAttestationResponse
-        const templateData = Array.from(new Uint8Array(response.clientDataJSON))
+      if (assertion && assertion.response) {
+        const response = assertion.response as AuthenticatorAssertionResponse
+        
+        // Convert signature to hex for verification
+        const signature = Array.from(new Uint8Array(response.signature))
           .map(b => b.toString(16).padStart(2, '0'))
           .join('')
 
-        // Simulate quality and confidence scores
-        const qualityScore = 85 + Math.random() * 15 // 85-100%
-        const confidence = 80 + Math.random() * 20 // 80-100%
+        // Convert credential ID for identification
+        const credentialId = Array.from(new Uint8Array(assertion.rawId))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('')
 
-        const info = await getDeviceInfo()
         return {
           success: true,
-          message: 'Biometric scan successful',
-          templateData,
-          qualityScore,
-          confidence,
-          ...(info ? { deviceInfo: info } : {})
-        }
-      } else {
-        return {
-          success: false,
-          message: 'Biometric authentication was cancelled or failed'
+          message: 'Fingerprint verified successfully',
+          templateData: signature,
+          qualityScore: 95,
+          confidence: 100,
+          deviceInfo: await getDeviceInfo()
         }
       }
+
+      return {
+        success: false,
+        message: 'Authentication failed'
+      }
     } catch (error: any) {
-      console.error('Biometric scan error:', error)
+      let message = 'Fingerprint verification failed'
       
-      let message = 'Biometric scan failed'
       if (error.name === 'NotAllowedError') {
-        message = 'Biometric access was denied'
-      } else if (error.name === 'AbortError') {
-        message = 'Biometric scan was cancelled'
+        message = 'User denied permission or no registered fingerprints found'
       } else if (error.name === 'NotSupportedError') {
         message = 'Biometric authentication is not supported'
       } else if (error.name === 'SecurityError') {
-        message = 'Security error during biometric scan'
+        message = 'Security error - ensure you are using HTTPS'
+      } else if (error.name === 'AbortError') {
+        message = 'Authentication was cancelled'
       } else if (error.name === 'TimeoutError') {
-        message = 'Biometric scan timed out'
+        message = 'Authentication timed out'
       }
-      const info = await getDeviceInfo()
+
       return {
         success: false,
         message,
-        ...(info ? { deviceInfo: info } : {})
+        deviceInfo: await getDeviceInfo()
       }
     }
   }, [isSupported, isAvailable, getDeviceInfo])
 
   const stopScan = useCallback(() => {
-    // In a real implementation, this would cancel any ongoing biometric operations
-    console.log('Stopping biometric scan...')
+    // WebAuthn doesn't provide a way to cancel ongoing operations
+    // The timeout will handle cancellation
+    console.log('Scan cancellation requested - will timeout naturally')
   }, [])
 
   return {
@@ -214,6 +275,7 @@ export const useBiometric = (): UseBiometricReturn => {
     deviceInfo,
     startScan,
     stopScan,
-    getDeviceInfo
+    getDeviceInfo,
+    enrollFingerprint
   }
 }

@@ -1,31 +1,31 @@
 // src/routes/biometric.ts - Biometric Routes
-import express from 'express'
-import { prisma } from '../config/database'
-import { authenticate } from '../middleware/auth'
-import { encryptBiometric, verifyBiometric } from '../utils/biometric'
-import { logger } from '../utils/logger'
+import express from "express";
+import { prisma } from "../config/database";
+import { authenticate } from "../middleware/auth";
+import { encryptBiometric, verifyBiometric } from "../utils/biometric";
+import { logger } from "../utils/logger";
 
-const router = express.Router()
+const router = express.Router();
 
 // Enroll biometric
-router.post('/enroll', authenticate, async (req, res) => {
+router.post("/enroll", authenticate, async (req, res) => {
   try {
-    const { studentId, biometricData, deviceInfo, qualityScore } = req.body
+    const { studentId, biometricData, deviceInfo, qualityScore } = req.body;
 
     // Check if student exists
     const student = await prisma.student.findUnique({
-      where: { id: studentId }
-    })
+      where: { id: studentId },
+    });
 
     if (!student) {
       return res.status(404).json({
         success: false,
-        message: 'Student not found'
-      })
+        message: "Student not found",
+      });
     }
 
     // Encrypt biometric data
-    const encryptedTemplate = encryptBiometric(biometricData)
+    const encryptedTemplate = encryptBiometric(biometricData);
 
     // Update student with biometric data
     const updatedStudent = await prisma.$transaction(async (tx) => {
@@ -34,76 +34,79 @@ router.post('/enroll', authenticate, async (req, res) => {
         where: { id: studentId },
         data: {
           biometricEnrolled: true,
-          biometricEnrolledAt: new Date()
-        }
-      })
+          biometricEnrolledAt: new Date(),
+        },
+      });
 
       // Create or update biometric template
       await tx.biometricTemplate.upsert({
         where: {
           studentId_templateType: {
             studentId,
-            templateType: 'FINGERPRINT'
-          }
+            templateType: "FINGERPRINT",
+          },
         },
         update: {
           templateData: encryptedTemplate,
           qualityScore,
-          enrollmentDevice: deviceInfo ? deviceInfo : undefined
+          enrollmentDevice: deviceInfo ? deviceInfo : undefined,
         },
         create: {
           studentId,
           templateData: encryptedTemplate,
-          templateType: 'FINGERPRINT',
+          templateType: "FINGERPRINT",
           qualityScore,
-          enrollmentDevice: deviceInfo ? JSON.stringify(deviceInfo) : undefined
-        }
-      })
+          enrollmentDevice: deviceInfo ? JSON.stringify(deviceInfo) : undefined,
+        },
+      });
 
-      return student
-    })
+      return student;
+    });
 
-    logger.info(`Biometric enrolled for student: ${student.matricNumber}`)
+    logger.info(`Biometric enrolled for student: ${student.matricNumber}`);
 
     res.json({
       success: true,
-      message: 'Biometric enrollment successful',
-      data: updatedStudent
-    })
+      message: "Biometric enrollment successful",
+      data: updatedStudent,
+    });
   } catch (error) {
-    logger.error('Biometric enrollment error:', error)
+    logger.error("Biometric enrollment error:", error);
     res.status(500).json({
       success: false,
-      message: 'Biometric enrollment failed'
-    })
+      message: "Biometric enrollment failed",
+    });
   }
-})
+});
 
 // Verify biometric
-router.post('/verify', authenticate, async (req, res) => {
+router.post("/verify", authenticate, async (req, res) => {
   try {
-    const { studentId, biometricData } = req.body
+    const { studentId, biometricData } = req.body;
 
     // Get stored biometric template
     const template = await prisma.biometricTemplate.findFirst({
       where: {
         studentId,
-        templateType: 'FINGERPRINT'
+        templateType: "FINGERPRINT",
       },
       include: {
-        student: true
-      }
-    })
+        student: true,
+      },
+    });
 
     if (!template) {
       return res.status(404).json({
         success: false,
-        message: 'No biometric template found for this student'
-      })
+        message: "No biometric template found for this student",
+      });
     }
 
     // Verify biometric
-    const { matched, confidence } = verifyBiometric(biometricData, template.templateData)
+    const { matched, confidence } = verifyBiometric(
+      biometricData,
+      template.templateData
+    );
 
     res.json({
       success: true,
@@ -111,88 +114,88 @@ router.post('/verify', authenticate, async (req, res) => {
         matched,
         confidence,
         studentId,
-        templateId: template.id
-      }
-    })
+        templateId: template.id,
+      },
+    });
   } catch (error) {
-    logger.error('Biometric verification error:', error)
+    logger.error("Biometric verification error:", error);
     res.status(500).json({
       success: false,
-      message: 'Biometric verification failed'
-    })
+      message: "Biometric verification failed",
+    });
   }
-})
+});
 
 // Get biometric status
-router.get('/status/:studentId', authenticate, async (req, res) => {
+router.get("/status/:studentId", authenticate, async (req, res) => {
   try {
-    const { studentId } = req.params
+    const { studentId } = req.params;
 
     const student = await prisma.student.findUnique({
       where: { id: studentId },
       select: {
         biometricEnrolled: true,
-        biometricEnrolledAt: true
-      }
-    })
+        biometricEnrolledAt: true,
+      },
+    });
 
     if (!student) {
       return res.status(404).json({
         success: false,
-        message: 'Student not found'
-      })
+        message: "Student not found",
+      });
     }
 
     res.json({
       success: true,
       data: {
         enrolled: student.biometricEnrolled,
-        enrolledAt: student.biometricEnrolledAt
-      }
-    })
+        enrolledAt: student.biometricEnrolledAt,
+      },
+    });
   } catch (error) {
-    logger.error('Get biometric status error:', error)
+    logger.error("Get biometric status error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get biometric status'
-    })
+      message: "Failed to get biometric status",
+    });
   }
-})
+});
 
 // Delete biometric
-router.delete('/:studentId', authenticate, async (req, res) => {
+router.delete("/:studentId", authenticate, async (req, res) => {
   try {
-    const { studentId } = req.params
+    const { studentId } = req.params;
 
     await prisma.$transaction(async (tx) => {
       // Delete biometric templates
       await tx.biometricTemplate.deleteMany({
-        where: { studentId }
-      })
+        where: { studentId },
+      });
 
       // Update student record
       await tx.student.update({
         where: { id: studentId },
         data: {
           biometricEnrolled: false,
-          biometricEnrolledAt: null
-        }
-      })
-    })
+          biometricEnrolledAt: null,
+        },
+      });
+    });
 
-    logger.info(`Biometric data deleted for student: ${studentId}`)
+    logger.info(`Biometric data deleted for student: ${studentId}`);
 
     res.json({
       success: true,
-      message: 'Biometric data deleted successfully'
-    })
+      message: "Biometric data deleted successfully",
+    });
   } catch (error) {
-    logger.error('Delete biometric error:', error)
+    logger.error("Delete biometric error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete biometric data'
-    })
+      message: "Failed to delete biometric data",
+    });
   }
-})
+});
 
-export default router
+export default router;

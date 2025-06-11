@@ -12,7 +12,7 @@ import {
   XCircle
 } from 'lucide-react'
 
-// import { attendanceService } from '../services/attendance'
+import { attendanceService } from '../services/attendance'
 import type { AttendanceSession } from '../types/attendance'
 
 import Button from '../components/UI/Button'

@@ -27,17 +27,10 @@
       "@/routes/*": ["routes/*"],
       "@/services/*": ["services/*"],
       "@/utils/*": ["utils/*"],
-      "@/config/*": ["src/config/*"],
+      "@/config/*": ["config/*"],
       "@/types/*": ["types/*"]
     }
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ]
+  "include": ["src/**/*", "config"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

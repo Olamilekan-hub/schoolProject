@@ -1,6 +1,6 @@
-// src/components/Biometric/FingerprintScanner.tsx
+// src/components/Biometric/FingerprintScanner.tsx - FIXED VERSION
 import React, { useState, useEffect, useCallback } from 'react'
-import { Fingerprint, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Fingerprint, CheckCircle, XCircle, AlertCircle, Shield, Wifi } from 'lucide-react'
 import { clsx } from 'clsx'
 import toast from 'react-hot-toast'
 
@@ -20,7 +20,6 @@ const FingerprintScanner: React.FC<BiometricScannerProps> = ({
   deviceType = 'FINGERPRINT',
 }) => {
   const [scannerState, setScannerState] = useState<ScannerState>('idle')
-  const [scanProgress, setScanProgress] = useState(0)
   const [errorMessage, setErrorMessage] = useState('')
   const [retryCount, setRetryCount] = useState(0)
   
@@ -33,7 +32,7 @@ const FingerprintScanner: React.FC<BiometricScannerProps> = ({
   } = useBiometric()
 
   const maxRetries = 3
-  const scanTimeout = 10000 // 10 seconds
+  const scanTimeout = 30000 // 30 seconds
 
   // Cleanup on unmount
   useEffect(() => {
@@ -47,33 +46,24 @@ const FingerprintScanner: React.FC<BiometricScannerProps> = ({
 
   const resetScanner = useCallback(() => {
     setScannerState('idle')
-    setScanProgress(0)
     setErrorMessage('')
     setRetryCount(0)
   }, [])
 
-  const simulateScanProgress = useCallback(() => {
-    let progress = 0
-    const interval = setInterval(() => {
-      progress += Math.random() * 20
-      setScanProgress(Math.min(progress, 95))
-      
-      if (progress >= 95) {
-        clearInterval(interval)
-      }
-    }, 200)
-
-    return interval
-  }, [])
-
   const handleStartScan = useCallback(async () => {
     if (!isSupported) {
-      toast.error('Biometric authentication is not supported on this device')
+      const errorMsg = 'Windows Hello or biometric authentication is not supported on this device'
+      toast.error(errorMsg)
+      const result: BiometricScanResult = { success: false, message: errorMsg }
+      onScanResult(result)
       return
     }
 
     if (!isAvailable) {
-      toast.error('Biometric device is not available')
+      const errorMsg = 'Windows Hello is not set up or no fingerprints are enrolled. Please set up Windows Hello in Settings.'
+      toast.error(errorMsg)
+      const result: BiometricScanResult = { success: false, message: errorMsg }
+      onScanResult(result)
       return
     }
 
@@ -81,54 +71,59 @@ const FingerprintScanner: React.FC<BiometricScannerProps> = ({
 
     try {
       setScannerState('scanning')
-      setScanProgress(0)
       setErrorMessage('')
       onScanStart?.()
 
-      // Start progress simulation
-      const progressInterval = simulateScanProgress()
+      // Show immediate feedback
+      toast('Windows Hello prompt should appear...')
 
-      // Start actual biometric scan
+      // Start actual biometric authentication
       const scanResult = await startScan({
         timeout: scanTimeout,
         allowFallback: false,
-        userPrompt: 'Please place your finger on the scanner',
+        userPrompt: 'Please verify your fingerprint to mark attendance',
       })
 
-      clearInterval(progressInterval)
-      setScanProgress(100)
       setScannerState('processing')
 
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Brief processing delay for UX
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       if (scanResult.success) {
         setScannerState('success')
         
         const result: BiometricScanResult = {
           success: true,
-          message: 'Fingerprint captured successfully',
+          message: 'Fingerprint verified successfully',
           templateData: scanResult.templateData,
           qualityScore: scanResult.qualityScore,
           confidence: scanResult.confidence,
-          deviceInfo: deviceInfo,
+          deviceInfo: scanResult.deviceInfo,
         }
 
         onScanResult(result)
-        toast.success('Fingerprint scan successful!')
+        toast.success('Fingerprint verification successful!')
 
         // Reset after success
         setTimeout(resetScanner, 2000)
       } else {
-        throw new Error(scanResult.message || 'Scan failed')
+        throw new Error(scanResult.message || 'Fingerprint verification failed')
       }
     } catch (error: any) {
-      clearInterval(simulateScanProgress())
       setScannerState('error')
       
-      const errorMsg = error.name === 'NotAllowedError' 
-        ? 'Biometric access was denied. Please allow access and try again.'
-        : error.message || 'Fingerprint scan failed'
+      let errorMsg = error.message || 'Fingerprint verification failed'
+      
+      // Handle specific Windows Hello errors
+      if (error.name === 'NotAllowedError') {
+        errorMsg = 'Windows Hello access was denied. Please try again or check your Windows Hello settings.'
+      } else if (error.name === 'SecurityError') {
+        errorMsg = 'Security error. Please ensure you are using HTTPS and Windows Hello is properly configured.'
+      } else if (error.name === 'TimeoutError') {
+        errorMsg = 'Windows Hello verification timed out. Please try again.'
+      } else if (error.name === 'AbortError') {
+        errorMsg = 'Windows Hello verification was cancelled.'
+      }
       
       setErrorMessage(errorMsg)
       
@@ -161,7 +156,6 @@ const FingerprintScanner: React.FC<BiometricScannerProps> = ({
     onScanEnd, 
     onScanResult,
     retryCount,
-    simulateScanProgress,
     resetScanner
   ])
 
@@ -169,9 +163,8 @@ const FingerprintScanner: React.FC<BiometricScannerProps> = ({
     if (scannerState === 'scanning') {
       stopScan()
       setScannerState('idle')
-      setScanProgress(0)
       onScanEnd?.()
-      toast('Fingerprint scan cancelled')
+      toast('Windows Hello verification cancelled')
     }
   }, [scannerState, stopScan, onScanEnd])
 
@@ -182,8 +175,16 @@ const FingerprintScanner: React.FC<BiometricScannerProps> = ({
       case 'error':
         return <XCircle className="h-16 w-16 text-error-500" />
       case 'scanning':
+        return (
+          <div className="relative">
+            <Shield className="h-16 w-16 text-primary-500" />
+            <div className="absolute inset-0 animate-ping">
+              <Shield className="h-16 w-16 text-primary-300" />
+            </div>
+          </div>
+        )
       case 'processing':
-        return <Fingerprint className="h-16 w-16 text-primary-500 animate-pulse" />
+        return <LoadingSpinner size="lg" className="text-primary-500" />
       default:
         return <Fingerprint className="h-16 w-16 text-gray-400" />
     }
@@ -192,39 +193,52 @@ const FingerprintScanner: React.FC<BiometricScannerProps> = ({
   const getScannerMessage = () => {
     switch (scannerState) {
       case 'scanning':
-        return 'Place your finger on the scanner and hold still...'
+        return 'Windows Hello is requesting fingerprint verification...'
       case 'processing':
-        return 'Processing fingerprint data...'
+        return 'Processing fingerprint verification...'
       case 'success':
-        return 'Fingerprint captured successfully!'
+        return 'Fingerprint verified successfully!'
       case 'error':
-        return errorMessage || 'Fingerprint scan failed'
+        return errorMessage || 'Fingerprint verification failed'
       default:
-        return 'Click to start fingerprint scan'
+        return isAvailable 
+          ? 'Click to verify your fingerprint with Windows Hello'
+          : 'Windows Hello fingerprint not available'
     }
   }
 
   const getScannerClasses = () => {
     return clsx(
-      'biometric-scanner',
+      'biometric-scanner p-8 rounded-lg border-2 transition-all duration-300',
       {
-        'active': scannerState === 'scanning',
-        'success': scannerState === 'success',
-        'error': scannerState === 'error',
+        'border-primary-300 bg-primary-50': scannerState === 'scanning',
+        'border-success-300 bg-success-50': scannerState === 'success',
+        'border-error-300 bg-error-50': scannerState === 'error',
+        'border-gray-300 bg-gray-50': scannerState === 'idle',
+        'opacity-50 cursor-not-allowed': disabled || !isAvailable,
       },
-      disabled && 'opacity-50 cursor-not-allowed',
       className
     )
   }
 
   if (!isSupported) {
     return (
-      <div className={clsx('biometric-scanner', className)}>
-        <AlertCircle className="h-16 w-16 text-warning-500 mx-auto mb-4" />
-        <p className="text-center text-warning-700">
-          Biometric authentication is not supported on this device.
-          Please use a device with fingerprint scanner support.
-        </p>
+      <div className={clsx('biometric-scanner p-8 rounded-lg border-2 border-warning-300 bg-warning-50', className)}>
+        <div className="text-center">
+          <AlertCircle className="h-16 w-16 text-warning-500 mx-auto mb-4" />
+          <p className="text-center text-warning-700 mb-4">
+            Windows Hello or biometric authentication is not supported on this device or browser.
+          </p>
+          <div className="text-sm text-warning-600 space-y-2">
+            <p><strong>Requirements:</strong></p>
+            <ul className="list-disc list-inside text-left">
+              <li>Windows 10/11 with Windows Hello enabled</li>
+              <li>Fingerprint scanner hardware</li>
+              <li>HTTPS connection (required for security)</li>
+              <li>Modern browser (Chrome, Edge, Firefox)</li>
+            </ul>
+          </div>
+        </div>
       </div>
     )
   }
@@ -236,25 +250,33 @@ const FingerprintScanner: React.FC<BiometricScannerProps> = ({
           {getScannerIcon()}
         </div>
 
-        {/* Progress Bar */}
-        {(scannerState === 'scanning' || scannerState === 'processing') && (
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-            <div
-              className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${scanProgress}%` }}
-            />
-          </div>
-        )}
-
         <p className="text-lg font-medium text-gray-900 mb-4">
           {getScannerMessage()}
         </p>
 
         {/* Device Information */}
         {deviceInfo && (
-          <div className="text-xs text-gray-500 mb-4">
-            <p>Device: {deviceInfo.platform}</p>
-            <p>Scanner: {deviceInfo.biometricSupport ? 'Available' : 'Not Available'}</p>
+          <div className="text-xs text-gray-500 mb-4 p-3 bg-gray-100 rounded-lg">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <Wifi className="h-3 w-3" />
+              <span className="font-medium">Device Status</span>
+            </div>
+            <div className="space-y-1">
+              <p>Device: {deviceInfo.name}</p>
+              <p>Platform: {deviceInfo.model}</p>
+              <p>Status: {deviceInfo.isConnected ? 'Connected' : 'Disconnected'}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Windows Hello Specific Instructions */}
+        {scannerState === 'idle' && isAvailable && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+            <div className="flex items-center space-x-2 mb-2">
+              <Shield className="h-4 w-4" />
+              <span className="font-medium">Windows Hello Ready</span>
+            </div>
+            <p>When you click scan, Windows will prompt you to verify your fingerprint.</p>
           </div>
         )}
 
@@ -268,7 +290,7 @@ const FingerprintScanner: React.FC<BiometricScannerProps> = ({
               className="flex items-center space-x-2"
             >
               <Fingerprint className="h-5 w-5" />
-              <span>Start Scan</span>
+              <span>Verify Fingerprint</span>
             </Button>
           )}
 
@@ -291,7 +313,7 @@ const FingerprintScanner: React.FC<BiometricScannerProps> = ({
               variant="primary"
               className="flex items-center space-x-2"
             >
-              <span>Retry ({maxRetries - retryCount} left)</span>
+              <span>Try Again ({maxRetries - retryCount} left)</span>
             </Button>
           )}
 
@@ -313,15 +335,16 @@ const FingerprintScanner: React.FC<BiometricScannerProps> = ({
           </p>
         )}
 
-        {/* Help Text */}
-        {scannerState === 'idle' && (
-          <div className="mt-4 text-sm text-gray-600">
-            <p>Tips for better scanning:</p>
-            <ul className="list-disc list-inside text-left space-y-1 mt-2">
-              <li>Clean your finger and the scanner surface</li>
-              <li>Place your finger firmly on the scanner</li>
-              <li>Hold still until scanning is complete</li>
-              <li>Ensure good lighting conditions</li>
+        {/* Troubleshooting Help */}
+        {scannerState === 'error' && (
+          <div className="mt-4 text-sm text-gray-600 bg-gray-100 p-3 rounded-lg">
+            <p className="font-medium mb-2">Troubleshooting:</p>
+            <ul className="list-disc list-inside text-left space-y-1">
+              <li>Ensure Windows Hello is set up in Windows Settings</li>
+              <li>Make sure your fingerprint is enrolled</li>
+              <li>Check that your browser allows biometric access</li>
+              <li>Try using a different finger if available</li>
+              <li>Restart your browser if issues persist</li>
             </ul>
           </div>
         )}

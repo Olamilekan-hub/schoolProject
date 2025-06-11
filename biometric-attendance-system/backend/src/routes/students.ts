@@ -1,42 +1,42 @@
 // src/routes/students.ts - Student Management Routes
-import express from 'express'
-import { prisma } from '../config/database'
-import { authenticate, authorize } from '../middleware/auth'
-import { validateStudent } from '../middleware/validation'
-import { logger } from '../utils/logger'
+import express from "express";
+import { prisma } from "../config/database";
+import { authenticate, authorize } from "../middleware/auth";
+import { validateStudent } from "../middleware/validation";
+import { logger } from "../utils/logger";
 
-const router = express.Router()
+const router = express.Router();
 
 // Get all students
-router.get('/', authenticate, async (req, res) => {
+router.get("/", authenticate, async (req, res) => {
   try {
-    const { search, courseId, status, page = 1, limit = 50 } = req.query
+    const { search, courseId, status, page = 1, limit = 50 } = req.query;
 
-    const skip = (Number(page) - 1) * Number(limit)
-    
-    const where: any = {}
-    
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const where: any = {};
+
     // Add search filter
     if (search) {
       where.OR = [
-        { firstName: { contains: search as string, mode: 'insensitive' } },
-        { lastName: { contains: search as string, mode: 'insensitive' } },
-        { matricNumber: { contains: search as string, mode: 'insensitive' } }
-      ]
+        { firstName: { contains: search as string, mode: "insensitive" } },
+        { lastName: { contains: search as string, mode: "insensitive" } },
+        { matricNumber: { contains: search as string, mode: "insensitive" } },
+      ];
     }
-    
+
     // Add status filter
     if (status) {
-      where.status = status
+      where.status = status;
     }
-    
+
     // Add course filter
     if (courseId) {
       where.studentCourses = {
         some: {
-          courseId: courseId as string
-        }
-      }
+          courseId: courseId as string,
+        },
+      };
     }
 
     const students = await prisma.student.findMany({
@@ -44,24 +44,24 @@ router.get('/', authenticate, async (req, res) => {
       include: {
         studentCourses: {
           include: {
-            course: true
-          }
+            course: true,
+          },
         },
         registeredBy: {
           select: {
             firstName: true,
-            lastName: true
-          }
-        }
+            lastName: true,
+          },
+        },
       },
       skip,
       take: Number(limit),
       orderBy: {
-        createdAt: 'desc'
-      }
-    })
+        createdAt: "desc",
+      },
+    });
 
-    const total = await prisma.student.count({ where })
+    const total = await prisma.student.count({ where });
 
     res.json({
       success: true,
@@ -70,67 +70,67 @@ router.get('/', authenticate, async (req, res) => {
         total,
         page: Number(page),
         limit: Number(limit),
-        pages: Math.ceil(total / Number(limit))
-      }
-    })
+        pages: Math.ceil(total / Number(limit)),
+      },
+    });
   } catch (error) {
-    logger.error('Get students error:', error)
+    logger.error("Get students error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch students'
-    })
+      message: "Failed to fetch students",
+    });
   }
-})
+});
 
 // Get single student
-router.get('/:id', authenticate, async (req, res) => {
+router.get("/:id", authenticate, async (req, res) => {
   try {
     const student = await prisma.student.findUnique({
       where: { id: req.params.id },
       include: {
         studentCourses: {
           include: {
-            course: true
-          }
+            course: true,
+          },
         },
         attendanceRecords: {
           include: {
             session: {
               include: {
-                course: true
-              }
-            }
+                course: true,
+              },
+            },
           },
           orderBy: {
-            markedAt: 'desc'
+            markedAt: "desc",
           },
-          take: 10
-        }
-      }
-    })
+          take: 10,
+        },
+      },
+    });
 
     if (!student) {
       return res.status(404).json({
         success: false,
-        message: 'Student not found'
-      })
+        message: "Student not found",
+      });
     }
 
     res.json({
       success: true,
-      data: student
-    })
+      data: student,
+    });
   } catch (error) {
-    logger.error('Get student error:', error)
+    logger.error("Get student error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch student'
-    })
+      message: "Failed to fetch student",
+    });
   }
-})
+});
 
 // Create student
-router.post('/', authenticate, validateStudent, async (req, res) => {
+router.post("/", authenticate, validateStudent, async (req, res) => {
   try {
     const {
       matricNumber,
@@ -144,19 +144,19 @@ router.post('/', authenticate, validateStudent, async (req, res) => {
       level,
       department,
       faculty,
-      courseIds
-    } = req.body
+      courseIds,
+    } = req.body;
 
     // Check if matric number already exists
     const existingStudent = await prisma.student.findUnique({
-      where: { matricNumber }
-    })
+      where: { matricNumber },
+    });
 
     if (existingStudent) {
       return res.status(400).json({
         success: false,
-        message: 'Student with this matric number already exists'
-      })
+        message: "Student with this matric number already exists",
+      });
     }
 
     // Create student with courses
@@ -174,22 +174,22 @@ router.post('/', authenticate, validateStudent, async (req, res) => {
           level,
           department,
           faculty,
-          registeredById: req.user!.id
-        }
-      })
+          registeredById: req.user!.id,
+        },
+      });
 
       // Enroll in courses
       if (courseIds && courseIds.length > 0) {
         await tx.studentCourse.createMany({
           data: courseIds.map((courseId: string) => ({
             studentId: newStudent.id,
-            courseId
-          }))
-        })
+            courseId,
+          })),
+        });
       }
 
-      return newStudent
-    })
+      return newStudent;
+    });
 
     // Fetch complete student data
     const completeStudent = await prisma.student.findUnique({
@@ -197,32 +197,32 @@ router.post('/', authenticate, validateStudent, async (req, res) => {
       include: {
         studentCourses: {
           include: {
-            course: true
-          }
-        }
-      }
-    })
+            course: true,
+          },
+        },
+      },
+    });
 
-    logger.info(`New student created: ${matricNumber}`)
+    logger.info(`New student created: ${matricNumber}`);
 
     res.status(201).json({
       success: true,
-      message: 'Student created successfully',
-      data: completeStudent
-    })
+      message: "Student created successfully",
+      data: completeStudent,
+    });
   } catch (error) {
-    logger.error('Create student error:', error)
+    logger.error("Create student error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create student'
-    })
+      message: "Failed to create student",
+    });
   }
-})
+});
 
 // Update student
-router.put('/:id', authenticate, validateStudent, async (req, res) => {
+router.put("/:id", authenticate, validateStudent, async (req, res) => {
   try {
-    const { courseIds, ...updateData } = req.body
+    const { courseIds, ...updateData } = req.body;
 
     const student = await prisma.$transaction(async (tx) => {
       // Update student
@@ -230,30 +230,32 @@ router.put('/:id', authenticate, validateStudent, async (req, res) => {
         where: { id: req.params.id },
         data: {
           ...updateData,
-          dateOfBirth: updateData.dateOfBirth ? new Date(updateData.dateOfBirth) : null
-        }
-      })
+          dateOfBirth: updateData.dateOfBirth
+            ? new Date(updateData.dateOfBirth)
+            : null,
+        },
+      });
 
       // Update course enrollments if provided
       if (courseIds) {
         // Remove existing enrollments
         await tx.studentCourse.deleteMany({
-          where: { studentId: req.params.id }
-        })
+          where: { studentId: req.params.id },
+        });
 
         // Add new enrollments
         if (courseIds.length > 0) {
           await tx.studentCourse.createMany({
             data: courseIds.map((courseId: string) => ({
               studentId: req.params.id,
-              courseId
-            }))
-          })
+              courseId,
+            })),
+          });
         }
       }
 
-      return updatedStudent
-    })
+      return updatedStudent;
+    });
 
     // Fetch complete student data
     const completeStudent = await prisma.student.findUnique({
@@ -261,44 +263,44 @@ router.put('/:id', authenticate, validateStudent, async (req, res) => {
       include: {
         studentCourses: {
           include: {
-            course: true
-          }
-        }
-      }
-    })
+            course: true,
+          },
+        },
+      },
+    });
 
     res.json({
       success: true,
-      message: 'Student updated successfully',
-      data: completeStudent
-    })
+      message: "Student updated successfully",
+      data: completeStudent,
+    });
   } catch (error) {
-    logger.error('Update student error:', error)
+    logger.error("Update student error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update student'
-    })
+      message: "Failed to update student",
+    });
   }
-})
+});
 
 // Delete student
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete("/:id", authenticate, async (req, res) => {
   try {
     await prisma.student.delete({
-      where: { id: req.params.id }
-    })
+      where: { id: req.params.id },
+    });
 
     res.json({
       success: true,
-      message: 'Student deleted successfully'
-    })
+      message: "Student deleted successfully",
+    });
   } catch (error) {
-    logger.error('Delete student error:', error)
+    logger.error("Delete student error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete student'
-    })
+      message: "Failed to delete student",
+    });
   }
-})
+});
 
-export default router
+export default router;

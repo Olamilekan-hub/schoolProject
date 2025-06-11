@@ -1,4 +1,4 @@
-// src/App.tsx
+// src/App.tsx - UPDATED WITH BIOMETRIC TEST ROUTE
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -20,6 +20,9 @@ import Reports from './pages/Reports'
 import Profile from './pages/Profile'
 import AttendanceLink from './pages/AttendanceLink'
 import NotFound from './pages/NotFound'
+
+// Test Components
+import BiometricTest from './components/Test/BiometricTest'
 
 // Styles
 import './index.css'
@@ -51,6 +54,9 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/attendance/:token" element={<AttendanceLink />} />
                 
+                {/* Public Test Route - Accessible without login for testing */}
+                <Route path="/biometric-test" element={<BiometricTest />} />
+                
                 {/* Protected Routes */}
                 <Route
                   path="/"
@@ -66,13 +72,15 @@ function App() {
                   <Route path="attendance" element={<Attendance />} />
                   <Route path="reports" element={<Reports />} />
                   <Route path="profile" element={<Profile />} />
+                  {/* Protected test route as well */}
+                  <Route path="test/biometric" element={<BiometricTest />} />
                 </Route>
                 
                 {/* 404 Route */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
               
-              {/* Global Toast Notifications */}
+              {/* Global Toast Notifications with biometric-specific styling */}
               <Toaster
                 position="top-right"
                 toastOptions={{
@@ -95,6 +103,8 @@ function App() {
                       secondary: '#fff',
                     },
                   },
+                  // Custom styling for biometric-related toasts
+                  className: 'biometric-toast',
                 }}
               />
             </div>

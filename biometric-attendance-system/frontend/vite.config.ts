@@ -1,7 +1,41 @@
-// frontend/vite.config.ts
+// frontend/vite.config.ts - UPDATED WITH HTTPS
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import fs from 'fs'
+
+// Function to generate self-signed certificate for development
+function createSelfSignedCert() {
+  const keyPath = path.resolve(__dirname, 'certs/key.pem')
+  const certPath = path.resolve(__dirname, 'certs/cert.pem')
+  
+  // Check if certificates already exist
+  if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+    return { key: keyPath, cert: certPath }
+  }
+  
+  // Create certs directory if it doesn't exist
+  const certsDir = path.dirname(keyPath)
+  if (!fs.existsSync(certsDir)) {
+    fs.mkdirSync(certsDir, { recursive: true })
+  }
+  
+  console.log('\n⚠️  HTTPS certificates not found!')
+  console.log('🔧 Please generate self-signed certificates for development:')
+  console.log('')
+  console.log('Run these commands in your frontend directory:')
+  console.log('mkdir -p certs')
+  console.log('openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"')
+  console.log('')
+  console.log('Or on Windows (with OpenSSL installed):')
+  console.log('mkdir certs')
+  console.log('openssl req -x509 -newkey rsa:4096 -keyout certs\\key.pem -out certs\\cert.pem -days 365 -nodes -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"')
+  console.log('')
+  console.log('After generating certificates, restart the dev server.')
+  console.log('')
+  
+  return null
+}
 
 export default defineConfig({
   plugins: [react()],
@@ -23,11 +57,25 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
-    // Remove HTTPS for development unless you have proper certificates
-    // https: {
-    //   key: './certs/key.pem',
-    //   cert: './certs/cert.pem',
-    // },
+    // Enable HTTPS for biometric features (WebAuthn requires HTTPS)
+    https: (() => {
+      const certs = createSelfSignedCert()
+      if (certs) {
+        return {
+          key: fs.readFileSync(certs.key),
+          cert: fs.readFileSync(certs.cert),
+        }
+      }
+      return false
+    })(),
+    // Proxy API requests to backend
+    proxy: {
+      '/api': {
+        target: 'https://localhost:5000',
+        changeOrigin: true,
+        secure: false, // Allow self-signed certificates in development
+      },
+    },
   },
   build: {
     outDir: 'dist',
