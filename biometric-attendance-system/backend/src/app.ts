@@ -345,13 +345,13 @@ app.get("/health", (req, res) => {
 });
 
 // API Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/students", studentRoutes);
-app.use("/api/courses", courseRoutes);
-app.use("/api/attendance", attendanceRoutes);
-app.use("/api/biometric", biometricRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/reports", reportsRoutes);
+app.use("/auth", authRoutes);
+app.use("/students", studentRoutes);
+app.use("/courses", courseRoutes);
+app.use("/attendance", attendanceRoutes);
+app.use("/biometric", biometricRoutes);
+app.use("/dashboard", dashboardRoutes);
+app.use("/reports", reportsRoutes);
 
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
