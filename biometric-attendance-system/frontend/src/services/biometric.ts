@@ -1,4 +1,4 @@
-// src/services/biometric.ts
+// src/services/api/biometric.ts
 import axios from 'axios'
 import type { 
   BiometricEnrollmentData,
@@ -13,7 +13,7 @@ const API_URL = import.meta.env.VITE_API_URL
 const biometricService = {
   enrollBiometric: async (data: BiometricEnrollmentData): Promise<Student> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.post(`${API_URL}/biometric/enroll`, data, {
+    const response = await axios.post(`${API_URL}/api/biometric/enroll`, data, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -21,7 +21,7 @@ const biometricService = {
 
   verifyBiometric: async (studentId: string, biometricData: string): Promise<BiometricVerificationResult> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.post(`${API_URL}/biometric/verify`, {
+    const response = await axios.post(`${API_URL}/api/biometric/verify`, {
       studentId,
       biometricData
     }, {
@@ -32,7 +32,7 @@ const biometricService = {
 
   getBiometricStatus: async (studentId: string): Promise<{ enrolled: boolean; enrolledAt?: string }> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.get(`${API_URL}/biometric/status/${studentId}`, {
+    const response = await axios.get(`${API_URL}/api/biometric/status/${studentId}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -40,14 +40,14 @@ const biometricService = {
 
   deleteBiometric: async (studentId: string): Promise<void> => {
     const token = localStorage.getItem('accessToken')
-    await axios.delete(`${API_URL}/biometric/${studentId}`, {
+    await axios.delete(`${API_URL}/api/biometric/${studentId}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   },
 
   updateBiometric: async (studentId: string, data: BiometricEnrollmentData): Promise<Student> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.put(`${API_URL}/biometric/${studentId}`, data, {
+    const response = await axios.put(`${API_URL}/api/biometric/${studentId}`, data, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
