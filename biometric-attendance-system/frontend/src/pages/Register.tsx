@@ -1,38 +1,40 @@
 // src/pages/Register.tsx
-import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Eye, EyeOff, UserPlus, Fingerprint, Plus, X } from 'lucide-react'
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Eye, EyeOff, UserPlus, Fingerprint, Plus, X } from "lucide-react";
 
-import { useAuth } from '../context/AuthContext'
-import Button from '../components/UI/Button'
-import Input from '../components/UI/Input'
-import LoadingSpinner from '../components/UI/LoadingSpinner'
-import type { RegisterData } from '../types/auth'
+import { useAuth } from "../context/AuthContext";
+import Button from "../components/UI/Button";
+import Input from "../components/UI/Input";
+import LoadingSpinner from "../components/UI/LoadingSpinner";
+import type { RegisterData } from "../types/auth";
 
-const registerSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string(),
-  phone: z.string().optional(),
-  department: z.string().min(2, 'Department is required'),
-  employeeId: z.string().optional(),
-  registrationKey: z.string().min(1, 'Registration key is required'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-})
+const registerSchema = z
+  .object({
+    firstName: z.string().min(2, "First name must be at least 2 characters"),
+    lastName: z.string().min(2, "Last name must be at least 2 characters"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+    phone: z.string().optional(),
+    department: z.string().min(2, "Department is required"),
+    employeeId: z.string().optional(),
+    registrationKey: z.string().min(1, "Registration key is required"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 const Register: React.FC = () => {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [courses, setCourses] = useState<string[]>([''])
-  const { register: registerUser, isAuthenticated, isLoading } = useAuth()
-  const navigate = useNavigate()
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [courses, setCourses] = useState<string[]>([""]);
+  const { register: registerUser, isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -40,48 +42,48 @@ const Register: React.FC = () => {
     formState: { errors, isSubmitting },
   } = useForm<RegisterData & { confirmPassword: string }>({
     resolver: zodResolver(registerSchema),
-  })
+  });
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard', { replace: true })
+      navigate("/dashboard", { replace: true });
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate]);
 
   const addCourse = () => {
-    setCourses([...courses, ''])
-  }
+    setCourses([...courses, ""]);
+  };
 
   const removeCourse = (index: number) => {
-    setCourses(courses.filter((_, i) => i !== index))
-  }
+    setCourses(courses.filter((_, i) => i !== index));
+  };
 
   const updateCourse = (index: number, value: string) => {
-    const updatedCourses = [...courses]
-    updatedCourses[index] = value
-    setCourses(updatedCourses)
-  }
+    const updatedCourses = [...courses];
+    updatedCourses[index] = value;
+    setCourses(updatedCourses);
+  };
 
   const onSubmit = async (data: RegisterData & { confirmPassword: string }) => {
-    const { confirmPassword, ...registerData } = data
-    const filteredCourses = courses.filter(course => course.trim() !== '')
-    
+    const { confirmPassword, ...registerData } = data;
+    const filteredCourses = courses.filter((course) => course.trim() !== "");
+
     const response = await registerUser({
       ...registerData,
       courses: filteredCourses,
-    })
-    
+    });
+
     if (response.success) {
-      navigate('/dashboard', { replace: true })
+      navigate("/dashboard", { replace: true });
     }
-  }
+  };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner size="lg" />
       </div>
-    )
+    );
   }
 
   return (
@@ -98,7 +100,7 @@ const Register: React.FC = () => {
             Register as a teacher to manage attendance
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -106,37 +108,37 @@ const Register: React.FC = () => {
                 label="First Name"
                 type="text"
                 placeholder="First name"
-                {...register('firstName')}
+                {...register("firstName")}
                 error={errors.firstName?.message}
                 autoComplete="given-name"
                 autoFocus
               />
-              
+
               <Input
                 label="Last Name"
                 type="text"
                 placeholder="Last name"
-                {...register('lastName')}
+                {...register("lastName")}
                 error={errors.lastName?.message}
                 autoComplete="family-name"
               />
             </div>
-            
+
             <Input
               label="Email Address"
               type="email"
               placeholder="Enter your email"
-              {...register('email')}
+              {...register("email")}
               error={errors.email?.message}
               autoComplete="email"
             />
-            
+
             <div className="relative">
               <Input
                 label="Password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
-                {...register('password')}
+                {...register("password")}
                 error={errors.password?.message}
                 autoComplete="new-password"
               />
@@ -152,13 +154,13 @@ const Register: React.FC = () => {
                 )}
               </button>
             </div>
-            
+
             <div className="relative">
               <Input
                 label="Confirm Password"
-                type={showConfirmPassword ? 'text' : 'password'}
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm your password"
-                {...register('confirmPassword')}
+                {...register("confirmPassword")}
                 error={errors.confirmPassword?.message}
                 autoComplete="new-password"
               />
@@ -174,46 +176,46 @@ const Register: React.FC = () => {
                 )}
               </button>
             </div>
-            
+
             <Input
               label="Phone Number (Optional)"
               type="tel"
               placeholder="Enter your phone number"
-              {...register('phone')}
+              {...register("phone")}
               error={errors.phone?.message}
               autoComplete="tel"
             />
-            
+
             <Input
               label="Department"
               type="text"
               placeholder="e.g., Computer Science"
-              {...register('department')}
+              {...register("department")}
               error={errors.department?.message}
             />
-            
+
             <Input
               label="Employee ID (Optional)"
               type="text"
               placeholder="Enter your employee ID"
-              {...register('employeeId')}
+              {...register("employeeId")}
               error={errors.employeeId?.message}
             />
-            
+
             <Input
               label="Registration Key"
               type="text"
               placeholder="Enter registration key"
-              {...register('registrationKey')}
+              {...register("registrationKey")}
               error={errors.registrationKey?.message}
               helperText="Contact your administrator for the registration key"
             />
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Courses You'll Teach
               </label>
-              <div className="space-y-2">
+              <div className="space-y-">
                 {courses.map((course, index) => (
                   <div key={index} className="flex items-center space-x-2">
                     <input
@@ -261,7 +263,7 @@ const Register: React.FC = () => {
 
           <div className="text-center">
             <span className="text-sm text-gray-600">
-              Already have an account?{' '}
+              Already have an account?{" "}
               <Link
                 to="/login"
                 className="font-medium text-primary-600 hover:text-primary-500"
@@ -273,7 +275,7 @@ const Register: React.FC = () => {
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Register
+export default Register;

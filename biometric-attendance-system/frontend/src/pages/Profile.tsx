@@ -1,91 +1,93 @@
 // src/pages/Profile.tsx
-import React, { useState } from 'react'
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Building, 
-  Key, 
+import React, { useState } from "react";
+import {
+  User,
+  Mail,
+  Phone,
+  Building,
+  Key,
   Shield,
   Edit3,
   Save,
-  X
-} from 'lucide-react'
+  X,
+} from "lucide-react";
 
-import { useAuth } from '../context/AuthContext'
-import { authService } from '../services/auth'
+import { useAuth } from "../context/AuthContext";
+import { authService } from "../services/auth";
 
-import Card from '../components/UI/Card'
-import Button from '../components/UI/Button'
-import Input from '../components/UI/Input'
-import Modal from '../components/UI/Modal'
-import { useForm } from 'react-hook-form'
-import toast from 'react-hot-toast'
+import Card from "../components/UI/Card";
+import Button from "../components/UI/Button";
+import Input from "../components/UI/Input";
+import Modal from "../components/UI/Modal";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 
 const Profile: React.FC = () => {
-  const { user } = useAuth()
-  const [isEditing, setIsEditing] = useState(false)
-  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const { user } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset
+    reset,
   } = useForm({
     defaultValues: {
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      email: user?.email || '',
-      phone: user?.phone || '',
-      department: user?.department || '',
-      employeeId: user?.employeeId || ''
-    }
-  })
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
+      department: user?.department || "",
+      employeeId: user?.employeeId || "",
+    },
+  });
 
   const {
     register: registerPassword,
     handleSubmit: handlePasswordSubmit,
     formState: { errors: passwordErrors, isSubmitting: isPasswordSubmitting },
     reset: resetPassword,
-    watch
-  } = useForm()
+    watch,
+  } = useForm();
 
   const handleProfileUpdate = async (data: any) => {
     try {
-      await authService.updateProfile(data)
-      toast.success('Profile updated successfully!')
-      setIsEditing(false)
+      await authService.updateProfile(data);
+      toast.success("Profile updated successfully!");
+      setIsEditing(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update profile')
+      toast.error(error.message || "Failed to update profile");
     }
-  }
+  };
 
   const handlePasswordChange = async (data: any) => {
     try {
-      await authService.changePassword(data.currentPassword, data.newPassword)
-      toast.success('Password changed successfully!')
-      setShowPasswordModal(false)
-      resetPassword()
+      await authService.changePassword(data.currentPassword, data.newPassword);
+      toast.success("Password changed successfully!");
+      setShowPasswordModal(false);
+      resetPassword();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to change password')
+      toast.error(error.message || "Failed to change password");
     }
-  }
+  };
 
   const handleCancelEdit = () => {
-    reset()
-    setIsEditing(false)
-  }
+    reset();
+    setIsEditing(false);
+  };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-2 lg:space-y-6">
+    <div className="max-w-4xl mx-auto space-y- lg:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
-          <p className="text-gray-600">Manage your account information and preferences</p>
+          <p className="text-gray-600">
+            Manage your account information and preferences
+          </p>
         </div>
-        
+
         {!isEditing && (
           <Button onClick={() => setIsEditing(true)}>
             <Edit3 className="w-4 h-4 mr-2" />
@@ -106,7 +108,9 @@ const Profile: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900">
                   {user?.firstName} {user?.lastName}
                 </h3>
-                <p className="text-gray-600 capitalize">{user?.role.toLowerCase()}</p>
+                <p className="text-gray-600 capitalize">
+                  {user?.role.toLowerCase()}
+                </p>
                 <p className="text-sm text-gray-500">{user?.department}</p>
               </div>
             </div>
@@ -115,44 +119,44 @@ const Profile: React.FC = () => {
           <div className="grid grid-cols-1 gap-6 mt-6 md:grid-cols-2">
             <Input
               label="First Name"
-              {...register('firstName', { required: 'First name is required' })}
+              {...register("firstName", { required: "First name is required" })}
               error={errors.firstName?.message as string}
               disabled={!isEditing}
             />
-            
+
             <Input
               label="Last Name"
-              {...register('lastName', { required: 'Last name is required' })}
+              {...register("lastName", { required: "Last name is required" })}
               error={errors.lastName?.message as string}
               disabled={!isEditing}
             />
-            
+
             <Input
               label="Email Address"
               type="email"
-              {...register('email', { required: 'Email is required' })}
+              {...register("email", { required: "Email is required" })}
               error={errors.email?.message as string}
               disabled={!isEditing}
             />
-            
+
             <Input
               label="Phone Number"
               type="tel"
-              {...register('phone')}
+              {...register("phone")}
               error={errors.phone?.message as string}
               disabled={!isEditing}
             />
-            
+
             <Input
               label="Department"
-              {...register('department')}
+              {...register("department")}
               error={errors.department?.message as string}
               disabled={!isEditing}
             />
-            
+
             <Input
               label="Employee ID"
-              {...register('employeeId')}
+              {...register("employeeId")}
               error={errors.employeeId?.message as string}
               disabled={!isEditing}
             />
@@ -160,7 +164,11 @@ const Profile: React.FC = () => {
 
           {isEditing && (
             <div className="flex justify-end mt-6 space-x-4">
-              <Button type="button" variant="secondary" onClick={handleCancelEdit}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleCancelEdit}
+              >
                 <X className="w-4 h-4 mr-2" />
                 Cancel
               </Button>
@@ -181,7 +189,9 @@ const Profile: React.FC = () => {
               <Key className="w-5 h-5 text-gray-600" />
               <div>
                 <p className="font-medium text-gray-900">Password</p>
-                <p className="text-sm text-gray-600">Last changed 30 days ago</p>
+                <p className="text-sm text-gray-600">
+                  Last changed 30 days ago
+                </p>
               </div>
             </div>
             <Button size="sm" onClick={() => setShowPasswordModal(true)}>
@@ -193,7 +203,9 @@ const Profile: React.FC = () => {
             <div className="flex items-center space-x-3">
               <Shield className="w-5 h-5 text-green-600" />
               <div>
-                <p className="font-medium text-gray-900">Two-Factor Authentication</p>
+                <p className="font-medium text-gray-900">
+                  Two-Factor Authentication
+                </p>
                 <p className="text-sm text-gray-600">Not enabled</p>
               </div>
             </div>
@@ -228,50 +240,56 @@ const Profile: React.FC = () => {
       <Modal
         isOpen={showPasswordModal}
         onClose={() => {
-          setShowPasswordModal(false)
-          resetPassword()
+          setShowPasswordModal(false);
+          resetPassword();
         }}
         title="Change Password"
         size="md"
       >
-        <form onSubmit={handlePasswordSubmit(handlePasswordChange)} className="space-y-4">
+        <form
+          onSubmit={handlePasswordSubmit(handlePasswordChange)}
+          className="space-y-4"
+        >
           <Input
             label="Current Password"
             type="password"
-            {...registerPassword('currentPassword', { 
-              required: 'Current password is required' 
+            {...registerPassword("currentPassword", {
+              required: "Current password is required",
             })}
             error={passwordErrors.currentPassword?.message as string}
           />
-          
+
           <Input
             label="New Password"
             type="password"
-            {...registerPassword('newPassword', { 
-              required: 'New password is required',
-              minLength: { value: 8, message: 'Password must be at least 8 characters' }
+            {...registerPassword("newPassword", {
+              required: "New password is required",
+              minLength: {
+                value: 8,
+                message: "Password must be at least 8 characters",
+              },
             })}
             error={passwordErrors.newPassword?.message as string}
           />
-          
+
           <Input
             label="Confirm New Password"
             type="password"
-            {...registerPassword('confirmPassword', { 
-              required: 'Please confirm your password',
-              validate: (value) => 
-                value === watch('newPassword') || 'Passwords do not match'
+            {...registerPassword("confirmPassword", {
+              required: "Please confirm your password",
+              validate: (value) =>
+                value === watch("newPassword") || "Passwords do not match",
             })}
             error={passwordErrors.confirmPassword?.message as string}
           />
 
           <div className="flex justify-end pt-4 space-x-4">
-            <Button 
-              type="button" 
-              variant="secondary" 
+            <Button
+              type="button"
+              variant="secondary"
               onClick={() => {
-                setShowPasswordModal(false)
-                resetPassword()
+                setShowPasswordModal(false);
+                resetPassword();
               }}
             >
               Cancel
@@ -283,7 +301,7 @@ const Profile: React.FC = () => {
         </form>
       </Modal>
     </div>
-  )
-}
+  );
+};
 
-export default Profile
+export default Profile;

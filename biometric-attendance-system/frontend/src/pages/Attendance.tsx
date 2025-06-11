@@ -1,10 +1,10 @@
 // src/pages/Attendance.tsx - Complete Implementation
-import React, { useState, useEffect } from 'react'
-import { 
-  Plus, 
-  Calendar, 
-  Clock, 
-  UserCheck, 
+import React, { useState, useEffect } from "react";
+import {
+  Plus,
+  Calendar,
+  Clock,
+  UserCheck,
   Link as LinkIcon,
   QrCode,
   Play,
@@ -15,101 +15,119 @@ import {
   Edit,
   Trash2,
   Copy,
-  Share2
-} from 'lucide-react'
-import { format, isToday, isPast } from 'date-fns'
-import toast from 'react-hot-toast'
+  Share2,
+} from "lucide-react";
+import { format, isToday, isPast } from "date-fns";
+import toast from "react-hot-toast";
 
-import { useAttendanceSessions, useUpdateSessionStatus } from '../hooks/useAttendance'
-import { useCourses } from '../hooks/useCourses'
-import type { AttendanceSession } from '../types/attendance'
+import {
+  useAttendanceSessions,
+  useUpdateSessionStatus,
+} from "../hooks/useAttendance";
+import { useCourses } from "../hooks/useCourses";
+import type { AttendanceSession } from "../types/attendance";
 
-import Button from '../components/UI/Button'
-import Card from '../components/UI/Card'
-import Badge from '../components/UI/Badge'
-import Modal from '../components/UI/Modal'
-import Table from '../components/UI/Table'
-import Select from '../components/UI/Select'
-import SearchInput from '../components/UI/SearchInput'
-import AttendanceSessionForm from '../components/Attendance/AttendanceSessionForm'
-import AttendanceMarking from '../components/Attendance/AttendanceMarking'
-import AttendanceLiveView from '../components/Attendance/AttendanceLiveView'
-import QRCodeGenerator from '../components/UI/QRCodeGenerator'
-import Tooltip from '../components/UI/Tooltip'
+import Button from "../components/UI/Button";
+import Card from "../components/UI/Card";
+import Badge from "../components/UI/Badge";
+import Modal from "../components/UI/Modal";
+import Table from "../components/UI/Table";
+import Select from "../components/UI/Select";
+import SearchInput from "../components/UI/SearchInput";
+import AttendanceSessionForm from "../components/Attendance/AttendanceSessionForm";
+import AttendanceMarking from "../components/Attendance/AttendanceMarking";
+import AttendanceLiveView from "../components/Attendance/AttendanceLiveView";
+import QRCodeGenerator from "../components/UI/QRCodeGenerator";
+import Tooltip from "../components/UI/Tooltip";
 
 const Attendance: React.FC = () => {
   // State management
-  const [view, setView] = useState<'sessions' | 'marking' | 'live'>('sessions')
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showQRModal, setShowQRModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [selectedSession, setSelectedSession] = useState<AttendanceSession | null>(null)
-  const [attendanceLink, setAttendanceLink] = useState('')
-  
+  const [view, setView] = useState<"sessions" | "marking" | "live">("sessions");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedSession, setSelectedSession] =
+    useState<AttendanceSession | null>(null);
+  const [attendanceLink, setAttendanceLink] = useState("");
+
   // Filters
-  const [dateFilter, setDateFilter] = useState('all') // today, week, month, all
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [courseFilter, setCourseFilter] = useState('all')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [dateFilter, setDateFilter] = useState("all"); // today, week, month, all
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [courseFilter, setCourseFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Data fetching
-  const { data: sessions, isLoading: sessionsLoading, refetch } = useAttendanceSessions()
-  const { data: courses } = useCourses()
-//   const { mutate: createSession } = useCreateSession()
-  const { mutate: updateSessionStatus } = useUpdateSessionStatus()
+  const {
+    data: sessions,
+    isLoading: sessionsLoading,
+    refetch,
+  } = useAttendanceSessions();
+  const { data: courses } = useCourses();
+  //   const { mutate: createSession } = useCreateSession()
+  const { mutate: updateSessionStatus } = useUpdateSessionStatus();
 
   // Filter sessions based on current filters
-  const filteredSessions = sessions?.filter(session => {
-    // Date filter
-    if (dateFilter === 'today' && !isToday(new Date(session.sessionDate))) return false
-    if (dateFilter === 'week') {
-      const weekAgo = new Date()
-      weekAgo.setDate(weekAgo.getDate() - 7)
-      if (new Date(session.sessionDate) < weekAgo) return false
-    }
-    if (dateFilter === 'month') {
-      const monthAgo = new Date()
-      monthAgo.setMonth(monthAgo.getMonth() - 1)
-      if (new Date(session.sessionDate) < monthAgo) return false
-    }
-
-    // Status filter
-    if (statusFilter !== 'all' && session.status !== statusFilter) return false
-
-    // Course filter
-    if (courseFilter !== 'all' && session.courseId !== courseFilter) return false
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      const sessionName = session.sessionName.toLowerCase()
-      const courseCode = session.course?.courseCode.toLowerCase() || ''
-      const courseTitle = session.course?.courseTitle.toLowerCase() || ''
-      
-      if (!sessionName.includes(query) && !courseCode.includes(query) && !courseTitle.includes(query)) {
-        return false
+  const filteredSessions =
+    sessions?.filter((session) => {
+      // Date filter
+      if (dateFilter === "today" && !isToday(new Date(session.sessionDate)))
+        return false;
+      if (dateFilter === "week") {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        if (new Date(session.sessionDate) < weekAgo) return false;
       }
-    }
+      if (dateFilter === "month") {
+        const monthAgo = new Date();
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        if (new Date(session.sessionDate) < monthAgo) return false;
+      }
 
-    return true
-  }) || []
+      // Status filter
+      if (statusFilter !== "all" && session.status !== statusFilter)
+        return false;
+
+      // Course filter
+      if (courseFilter !== "all" && session.courseId !== courseFilter)
+        return false;
+
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const sessionName = session.sessionName.toLowerCase();
+        const courseCode = session.course?.courseCode.toLowerCase() || "";
+        const courseTitle = session.course?.courseTitle.toLowerCase() || "";
+
+        if (
+          !sessionName.includes(query) &&
+          !courseCode.includes(query) &&
+          !courseTitle.includes(query)
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    }) || [];
 
   // Get statistics
-  const todaySessions = sessions?.filter(session => 
-    isToday(new Date(session.sessionDate))
-  ) || []
+  const todaySessions =
+    sessions?.filter((session) => isToday(new Date(session.sessionDate))) || [];
 
-  const activeSessions = sessions?.filter(session => session.status === 'OPEN') || []
+  const activeSessions =
+    sessions?.filter((session) => session.status === "OPEN") || [];
 
-  const totalAttendance = sessions?.reduce((acc, session) => 
-    acc + (session.attendanceRecords?.length || 0), 0
-  ) || 0
+  const totalAttendance =
+    sessions?.reduce(
+      (acc, session) => acc + (session.attendanceRecords?.length || 0),
+      0
+    ) || 0;
 
   // Table columns for sessions
   const sessionColumns = [
     {
-      key: 'session',
-      header: 'Session Details',
+      key: "session",
+      header: "Session Details",
       render: (session: AttendanceSession) => (
         <div>
           <p className="font-medium text-gray-900">{session.sessionName}</p>
@@ -117,70 +135,81 @@ const Attendance: React.FC = () => {
             {session.course?.courseCode} - {session.course?.courseTitle}
           </p>
         </div>
-      )
+      ),
     },
     {
-      key: 'schedule',
-      header: 'Schedule',
+      key: "schedule",
+      header: "Schedule",
       render: (session: AttendanceSession) => {
-        const sessionDate = new Date(session.sessionDate)
-        const startTime = new Date(session.startTime)
-        
+        const sessionDate = new Date(session.sessionDate);
+        const startTime = new Date(session.startTime);
+
         return (
           <div>
-            <p className={`text-sm font-medium ${
-              isToday(sessionDate) ? 'text-blue-600' : 
-              isPast(sessionDate) ? 'text-gray-600' : 'text-green-600'
-            }`}>
-              {format(sessionDate, 'MMM dd, yyyy')}
+            <p
+              className={`text-sm font-medium ${
+                isToday(sessionDate)
+                  ? "text-blue-600"
+                  : isPast(sessionDate)
+                    ? "text-gray-600"
+                    : "text-green-600"
+              }`}
+            >
+              {format(sessionDate, "MMM dd, yyyy")}
             </p>
             <p className="text-sm text-gray-500">
-              {format(startTime, 'h:mm a')}
-              {session.endTime && ` - ${format(new Date(session.endTime), 'h:mm a')}`}
+              {format(startTime, "h:mm a")}
+              {session.endTime &&
+                ` - ${format(new Date(session.endTime), "h:mm a")}`}
             </p>
             {isToday(sessionDate) && (
-              <Badge variant="info" size="sm" className="mt-1">Today</Badge>
+              <Badge variant="info" size="sm" className="mt-1">
+                Today
+              </Badge>
             )}
           </div>
-        )
-      }
+        );
+      },
     },
     {
-      key: 'attendance',
-      header: 'Attendance',
+      key: "attendance",
+      header: "Attendance",
       render: (session: AttendanceSession) => {
-        const presentCount = session.attendanceRecords?.filter(r => r.status === 'PRESENT').length || 0
-        const totalRecords = session.attendanceRecords?.length || 0
-        
+        const presentCount =
+          session.attendanceRecords?.filter((r) => r.status === "PRESENT")
+            .length || 0;
+        const totalRecords = session.attendanceRecords?.length || 0;
+
         return (
           <div>
-            <p className="text-sm font-medium">
-              {presentCount} present
-            </p>
+            <p className="text-sm font-medium">{presentCount} present</p>
             <p className="text-sm text-gray-500">
               {totalRecords} total records
             </p>
             {totalRecords > 0 && (
               <div className="w-full h-2 mt-1 bg-gray-200 rounded-full">
-                <div 
-                  className="h-2 transition-all duration-300 bg-green-600 rounded-full" 
+                <div
+                  className="h-2 transition-all duration-300 bg-green-600 rounded-full"
                   style={{ width: `${(presentCount / totalRecords) * 100}%` }}
                 />
               </div>
             )}
           </div>
-        )
-      }
+        );
+      },
     },
     {
-      key: 'status',
-      header: 'Status',
+      key: "status",
+      header: "Status",
       render: (session: AttendanceSession) => (
         <div className="flex items-center space-x-2">
-          <Badge 
+          <Badge
             variant={
-              session.status === 'OPEN' ? 'success' :
-              session.status === 'CLOSED' ? 'secondary' : 'warning'
+              session.status === "OPEN"
+                ? "success"
+                : session.status === "CLOSED"
+                  ? "secondary"
+                  : "warning"
             }
           >
             {session.status}
@@ -191,14 +220,14 @@ const Attendance: React.FC = () => {
             </Tooltip>
           )}
         </div>
-      )
+      ),
     },
     {
-      key: 'actions',
-      header: 'Actions',
+      key: "actions",
+      header: "Actions",
       render: (session: AttendanceSession) => (
         <div className="flex items-center space-x-1">
-          {session.status === 'OPEN' && (
+          {session.status === "OPEN" && (
             <>
               <Tooltip content="Mark Attendance">
                 <Button
@@ -209,7 +238,7 @@ const Attendance: React.FC = () => {
                   <UserCheck className="w-4 h-4" />
                 </Button>
               </Tooltip>
-              
+
               <Tooltip content="Generate Link">
                 <Button
                   size="sm"
@@ -220,7 +249,7 @@ const Attendance: React.FC = () => {
                   <QrCode className="w-4 h-4" />
                 </Button>
               </Tooltip>
-              
+
               <Tooltip content="Close Session">
                 <Button
                   size="sm"
@@ -233,7 +262,7 @@ const Attendance: React.FC = () => {
               </Tooltip>
             </>
           )}
-          
+
           <Tooltip content="Live View">
             <Button
               size="sm"
@@ -244,7 +273,7 @@ const Attendance: React.FC = () => {
               <Eye className="w-4 h-4" />
             </Button>
           </Tooltip>
-          
+
           <Tooltip content="Edit Session">
             <Button
               size="sm"
@@ -255,7 +284,7 @@ const Attendance: React.FC = () => {
               <Edit className="w-4 h-4" />
             </Button>
           </Tooltip>
-          
+
           <Tooltip content="Delete Session">
             <Button
               size="sm"
@@ -267,125 +296,133 @@ const Attendance: React.FC = () => {
             </Button>
           </Tooltip>
         </div>
-      )
-    }
-  ]
+      ),
+    },
+  ];
 
   // Event handlers
   const handleCreateSession = () => {
-    setSelectedSession(null)
-    setShowCreateModal(true)
-  }
+    setSelectedSession(null);
+    setShowCreateModal(true);
+  };
 
   const handleEditSession = (session: AttendanceSession) => {
-    setSelectedSession(session)
-    setShowEditModal(true)
-  }
+    setSelectedSession(session);
+    setShowEditModal(true);
+  };
 
   const handleMarkAttendance = (session: AttendanceSession) => {
-    setSelectedSession(session)
-    setView('marking')
-  }
+    setSelectedSession(session);
+    setView("marking");
+  };
 
   const handleViewLive = (session: AttendanceSession) => {
-    setSelectedSession(session)
-    setView('live')
-  }
+    setSelectedSession(session);
+    setView("live");
+  };
 
   const handleCloseSession = async (session: AttendanceSession) => {
-    if (window.confirm('Are you sure you want to close this session? Students will no longer be able to mark attendance.')) {
+    if (
+      window.confirm(
+        "Are you sure you want to close this session? Students will no longer be able to mark attendance."
+      )
+    ) {
       try {
-        await updateSessionStatus({ sessionId: session.id, status: 'CLOSED' })
-        toast.success('Session closed successfully')
-        refetch()
+        await updateSessionStatus({ sessionId: session.id, status: "CLOSED" });
+        toast.success("Session closed successfully");
+        refetch();
       } catch (error) {
-        toast.error('Failed to close session')
+        toast.error("Failed to close session");
       }
     }
-  }
+  };
 
   const handleDeleteSession = async (session: AttendanceSession) => {
-    if (window.confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this session? This action cannot be undone."
+      )
+    ) {
       try {
         // TODO: Implement delete session
-        toast.success('Session deleted successfully')
-        refetch()
+        toast.success("Session deleted successfully");
+        refetch();
       } catch (error) {
-        toast.error('Failed to delete session')
+        toast.error("Failed to delete session");
       }
     }
-  }
+  };
 
   const handleGenerateLink = async (session: AttendanceSession) => {
     try {
       // TODO: Generate attendance link
-      const link = `${window.location.origin}/attendance/${session.attendanceLinkToken || 'temp-token'}`
-      setAttendanceLink(link)
-      setSelectedSession(session)
-      setShowQRModal(true)
+      const link = `${window.location.origin}/attendance/${session.attendanceLinkToken || "temp-token"}`;
+      setAttendanceLink(link);
+      setSelectedSession(session);
+      setShowQRModal(true);
     } catch (error) {
-      toast.error('Failed to generate attendance link')
+      toast.error("Failed to generate attendance link");
     }
-  }
+  };
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(attendanceLink)
-      toast.success('Link copied to clipboard')
+      await navigator.clipboard.writeText(attendanceLink);
+      toast.success("Link copied to clipboard");
     } catch (error) {
-      toast.error('Failed to copy link')
+      toast.error("Failed to copy link");
     }
-  }
+  };
 
   const handleShareWhatsApp = () => {
-    const message = `Mark your attendance for ${selectedSession?.sessionName}: ${attendanceLink}`
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`)
-  }
+    const message = `Mark your attendance for ${selectedSession?.sessionName}: ${attendanceLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`);
+  };
 
   const handleSessionCreated = () => {
-    refetch()
-    setShowCreateModal(false)
-    setShowEditModal(false)
-  }
+    refetch();
+    setShowCreateModal(false);
+    setShowEditModal(false);
+  };
 
   const handleExportSessions = () => {
     // TODO: Implement export functionality
-    toast.info('Export functionality coming soon')
-  }
+    toast.info("Export functionality coming soon");
+  };
 
   // Auto-refresh sessions every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      refetch()
-    }, 30000)
+      refetch();
+    }, 30000);
 
-    return () => clearInterval(interval)
-  }, [refetch])
+    return () => clearInterval(interval);
+  }, [refetch]);
 
   // Render based on current view
   const renderContent = () => {
     switch (view) {
-      case 'marking':
+      case "marking":
         return selectedSession ? (
-          <AttendanceMarking 
+          <AttendanceMarking
             session={selectedSession}
             onBack={() => {
-              setView('sessions')
-              setSelectedSession(null)
+              setView("sessions");
+              setSelectedSession(null);
             }}
           />
-        ) : null
+        ) : null;
 
-      case 'live':
+      case "live":
         return selectedSession ? (
-          <AttendanceLiveView 
+          <AttendanceLiveView
             session={selectedSession}
             onBack={() => {
-              setView('sessions')
-              setSelectedSession(null)
+              setView("sessions");
+              setSelectedSession(null);
             }}
           />
-        ) : null
+        ) : null;
 
       default:
         return (
@@ -449,7 +486,8 @@ const Attendance: React.FC = () => {
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                     <div>
                       <p className="font-medium text-green-900">
-                        {activeSessions.length} Active Session{activeSessions.length > 1 ? 's' : ''}
+                        {activeSessions.length} Active Session
+                        {activeSessions.length > 1 ? "s" : ""}
                       </p>
                       <p className="text-sm text-green-700">
                         Students can mark attendance now
@@ -457,15 +495,15 @@ const Attendance: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex space-x-2">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="success"
                       onClick={() => handleMarkAttendance(activeSessions[0])}
                     >
                       Mark Attendance
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="secondary"
                       onClick={() => handleViewLive(activeSessions[0])}
                     >
@@ -479,13 +517,13 @@ const Attendance: React.FC = () => {
             {/* Filters */}
             <Card className="p-4">
               <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
-                <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
+                <div className="flex flex-col space-y- sm:flex-row sm:space-y-0 sm:space-x-4">
                   <SearchInput
                     onSearch={setSearchQuery}
                     placeholder="Search sessions..."
                     className="w-full sm:w-64"
                   />
-                  
+
                   <Select
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
@@ -496,7 +534,7 @@ const Attendance: React.FC = () => {
                     <option value="week">This Week</option>
                     <option value="month">This Month</option>
                   </Select>
-                  
+
                   <Select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
@@ -507,14 +545,14 @@ const Attendance: React.FC = () => {
                     <option value="CLOSED">Closed</option>
                     <option value="CANCELLED">Cancelled</option>
                   </Select>
-                  
+
                   <Select
                     value={courseFilter}
                     onChange={(e) => setCourseFilter(e.target.value)}
                     className="w-full sm:w-48"
                   >
                     <option value="all">All Courses</option>
-                    {courses?.map(course => (
+                    {courses?.map((course) => (
                       <option key={course.id} value={course.id}>
                         {course.courseCode}
                       </option>
@@ -532,7 +570,7 @@ const Attendance: React.FC = () => {
                     <Download className="w-4 h-4" />
                     <span>Export</span>
                   </Button>
-                  
+
                   <Button
                     size="sm"
                     variant="secondary"
@@ -551,9 +589,12 @@ const Attendance: React.FC = () => {
               <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold">Attendance Sessions</h2>
+                    <h2 className="text-lg font-semibold">
+                      Attendance Sessions
+                    </h2>
                     <p className="text-sm text-gray-600">
-                      {filteredSessions.length} of {sessions?.length || 0} sessions
+                      {filteredSessions.length} of {sessions?.length || 0}{" "}
+                      sessions
                     </p>
                   </div>
                   <Button onClick={handleCreateSession}>
@@ -562,7 +603,7 @@ const Attendance: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              
+
               <Table
                 columns={sessionColumns}
                 data={filteredSessions}
@@ -571,25 +612,29 @@ const Attendance: React.FC = () => {
               />
             </Card>
           </div>
-        )
+        );
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Attendance Management</h1>
-          <p className="text-gray-600">Create sessions and track student attendance</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Attendance Management
+          </h1>
+          <p className="text-gray-600">
+            Create sessions and track student attendance
+          </p>
         </div>
-        
-        {view !== 'sessions' && (
-          <Button 
-            variant="secondary" 
+
+        {view !== "sessions" && (
+          <Button
+            variant="secondary"
             onClick={() => {
-              setView('sessions')
-              setSelectedSession(null)
+              setView("sessions");
+              setSelectedSession(null);
             }}
           >
             Back to Sessions
@@ -626,7 +671,7 @@ const Attendance: React.FC = () => {
           <p className="text-gray-600">
             Share this link or QR code with students to mark attendance
           </p>
-          
+
           {selectedSession && (
             <div className="p-3 text-left border border-blue-200 rounded-lg bg-blue-50">
               <h4 className="font-medium text-blue-900">Session Details:</h4>
@@ -634,20 +679,25 @@ const Attendance: React.FC = () => {
                 {selectedSession.sessionName}
               </p>
               <p className="text-xs text-blue-600">
-                {selectedSession.course?.courseCode} - {format(new Date(selectedSession.sessionDate), 'MMM dd, yyyy')}
+                {selectedSession.course?.courseCode} -{" "}
+                {format(new Date(selectedSession.sessionDate), "MMM dd, yyyy")}
               </p>
             </div>
           )}
-          
+
           <div className="p-4 rounded-lg bg-gray-50">
             <QRCodeGenerator value={attendanceLink} size={200} />
           </div>
-          
+
           <div className="p-3 text-left rounded-lg bg-gray-50">
-            <p className="mb-1 text-sm font-medium text-gray-700">Attendance Link:</p>
-            <p className="font-mono text-sm text-gray-600 break-all">{attendanceLink}</p>
+            <p className="mb-1 text-sm font-medium text-gray-700">
+              Attendance Link:
+            </p>
+            <p className="font-mono text-sm text-gray-600 break-all">
+              {attendanceLink}
+            </p>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="secondary"
@@ -666,7 +716,7 @@ const Attendance: React.FC = () => {
               <span>WhatsApp</span>
             </Button>
           </div>
-          
+
           <div className="space-y-1 text-xs text-left text-gray-500">
             <p>• Link expires in 24 hours</p>
             <p>• Students need their matric number to mark attendance</p>
@@ -675,7 +725,7 @@ const Attendance: React.FC = () => {
         </div>
       </Modal>
     </div>
-  )
-}
+  );
+};
 
-export default Attendance
+export default Attendance;

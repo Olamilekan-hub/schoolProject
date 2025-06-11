@@ -1,98 +1,119 @@
 // src/pages/Reports.tsx
-import React, { useState } from 'react'
-import { 
-  Download, 
-  Calendar, 
-  Filter, 
-  TrendingUp, 
-  Users, 
+import React, { useState } from "react";
+import {
+  Download,
+  Calendar,
+  Filter,
+  TrendingUp,
+  Users,
   FileText,
   BarChart3,
-  PieChart
-} from 'lucide-react'
-import { format, subDays, startOfMonth, endOfMonth } from 'date-fns'
+  PieChart,
+} from "lucide-react";
+import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 
-import { useAttendanceReports } from '../hooks/useReports'
-import { useCourses } from '../hooks/useCourses'
-import type { ExportOptions } from '../types/reports'
+import { useAttendanceReports } from "../hooks/useReports";
+import { useCourses } from "../hooks/useCourses";
+import type { ExportOptions } from "../types/reports";
 
-import Button from '../components/UI/Button'
-import Card from '../components/UI/Card'
-import Select from '../components/UI/Select'
-import Input from '../components/UI/Input'
-import LoadingSpinner from '../components/UI/LoadingSpinner'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Cell } from 'recharts'
+import Button from "../components/UI/Button";
+import Card from "../components/UI/Card";
+import Select from "../components/UI/Select";
+import Input from "../components/UI/Input";
+import LoadingSpinner from "../components/UI/LoadingSpinner";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart as RechartsPieChart,
+  Cell,
+} from "recharts";
 
 const Reports: React.FC = () => {
   // State for filters
   const [dateRange, setDateRange] = useState({
-    startDate: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
-    endDate: format(endOfMonth(new Date()), 'yyyy-MM-dd')
-  })
-  const [selectedCourse, setSelectedCourse] = useState('')
-  const [reportType, setReportType] = useState<'overview' | 'detailed' | 'analytics'>('overview')
+    startDate: format(startOfMonth(new Date()), "yyyy-MM-dd"),
+    endDate: format(endOfMonth(new Date()), "yyyy-MM-dd"),
+  });
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [reportType, setReportType] = useState<
+    "overview" | "detailed" | "analytics"
+  >("overview");
 
   // Data fetching
-  const { data: courses } = useCourses()
-  const { 
-    data: reportData, 
+  const { data: courses } = useCourses();
+  const {
+    data: reportData,
     isLoading,
-    refetch 
+    refetch,
   } = useAttendanceReports({
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
-    courseId: selectedCourse
-  })
+    courseId: selectedCourse,
+  });
 
-  const handleExport = async (format: 'PDF' | 'EXCEL' | 'CSV') => {
+  const handleExport = async (format: "PDF" | "EXCEL" | "CSV") => {
     const exportOptions: ExportOptions = {
       format,
       dateRange,
-      includeDetails: reportType === 'detailed',
-      courseIds: selectedCourse ? [selectedCourse] : undefined
-    }
+      includeDetails: reportType === "detailed",
+      courseIds: selectedCourse ? [selectedCourse] : undefined,
+    };
 
     try {
       // TODO: Implement export functionality
-      console.log('Exporting report:', exportOptions)
+      console.log("Exporting report:", exportOptions);
     } catch (error) {
-      console.error('Export failed:', error)
+      console.error("Export failed:", error);
     }
-  }
+  };
 
-  const handleDateRangeChange = (type: 'startDate' | 'endDate', value: string) => {
-    setDateRange(prev => ({
+  const handleDateRangeChange = (
+    type: "startDate" | "endDate",
+    value: string
+  ) => {
+    setDateRange((prev) => ({
       ...prev,
-      [type]: value
-    }))
-  }
+      [type]: value,
+    }));
+  };
 
   // Chart colors
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
+  const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />
       </div>
-    )
+    );
   }
 
   return (
-    <div className="space-y-2 lg:space-y-6">
+    <div className="space-y- lg:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="text-gray-600">Generate and analyze attendance reports</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Reports & Analytics
+          </h1>
+          <p className="text-gray-600">
+            Generate and analyze attendance reports
+          </p>
         </div>
-        
+
         <div className="flex items-center space-x-2">
-          <Button variant="secondary" onClick={() => handleExport('PDF')}>
+          <Button variant="secondary" onClick={() => handleExport("PDF")}>
             <Download className="w-4 h-4 mr-2" />
             Export PDF
           </Button>
-          <Button variant="secondary" onClick={() => handleExport('EXCEL')}>
+          <Button variant="secondary" onClick={() => handleExport("EXCEL")}>
             <Download className="w-4 h-4 mr-2" />
             Export Excel
           </Button>
@@ -109,10 +130,12 @@ const Reports: React.FC = () => {
             <Input
               type="date"
               value={dateRange.startDate}
-              onChange={(e) => handleDateRangeChange('startDate', e.target.value)}
+              onChange={(e) =>
+                handleDateRangeChange("startDate", e.target.value)
+              }
             />
           </div>
-          
+
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">
               End Date
@@ -120,23 +143,23 @@ const Reports: React.FC = () => {
             <Input
               type="date"
               value={dateRange.endDate}
-              onChange={(e) => handleDateRangeChange('endDate', e.target.value)}
+              onChange={(e) => handleDateRangeChange("endDate", e.target.value)}
             />
           </div>
-          
+
           <Select
             label="Course"
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
           >
             <option value="">All Courses</option>
-            {courses?.map(course => (
+            {courses?.map((course) => (
               <option key={course.id} value={course.id}>
                 {course.courseCode} - {course.courseTitle}
               </option>
             ))}
           </Select>
-          
+
           <Select
             label="Report Type"
             value={reportType}
@@ -158,7 +181,9 @@ const Reports: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Students</p>
-              <p className="text-xl font-bold">{reportData?.totalStudents || 0}</p>
+              <p className="text-xl font-bold">
+                {reportData?.totalStudents || 0}
+              </p>
             </div>
           </div>
         </Card>
@@ -170,7 +195,9 @@ const Reports: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Sessions</p>
-              <p className="text-xl font-bold">{reportData?.totalSessions || 0}</p>
+              <p className="text-xl font-bold">
+                {reportData?.totalSessions || 0}
+              </p>
             </div>
           </div>
         </Card>
@@ -182,7 +209,9 @@ const Reports: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Avg Attendance</p>
-              <p className="text-xl font-bold">{reportData?.averageAttendance || 0}%</p>
+              <p className="text-xl font-bold">
+                {reportData?.averageAttendance || 0}%
+              </p>
             </div>
           </div>
         </Card>
@@ -194,7 +223,9 @@ const Reports: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Records</p>
-              <p className="text-xl font-bold">{reportData?.totalRecords || 0}</p>
+              <p className="text-xl font-bold">
+                {reportData?.totalRecords || 0}
+              </p>
             </div>
           </div>
         </Card>
@@ -211,10 +242,10 @@ const Reports: React.FC = () => {
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="attendance" 
-                  stroke="#3B82F6" 
+                <Line
+                  type="monotone"
+                  dataKey="attendance"
+                  stroke="#3B82F6"
                   strokeWidth={2}
                 />
               </LineChart>
@@ -239,7 +270,7 @@ const Reports: React.FC = () => {
       </div>
 
       {/* Detailed Tables */}
-      {reportType === 'detailed' && (
+      {reportType === "detailed" && (
         <div className="space-y-6">
           {/* Student Attendance Table */}
           <Card title="Student Attendance Details" className="overflow-hidden">
@@ -263,17 +294,26 @@ const Reports: React.FC = () => {
                       <td>{student.sessionsAttended}</td>
                       <td>{student.totalSessions}</td>
                       <td>
-                        <span className={`px-2 py-1 rounded text-sm ${
-                          student.attendancePercentage >= 75 
-                            ? 'bg-green-100 text-green-800'
-                            : student.attendancePercentage >= 50
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded text-sm ${
+                            student.attendancePercentage >= 75
+                              ? "bg-green-100 text-green-800"
+                              : student.attendancePercentage >= 50
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                          }`}
+                        >
                           {student.attendancePercentage}%
                         </span>
                       </td>
-                      <td>{student.lastAttendance ? format(new Date(student.lastAttendance), 'MMM dd, yyyy') : 'Never'}</td>
+                      <td>
+                        {student.lastAttendance
+                          ? format(
+                              new Date(student.lastAttendance),
+                              "MMM dd, yyyy"
+                            )
+                          : "Never"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -300,17 +340,19 @@ const Reports: React.FC = () => {
                     <tr key={session.id}>
                       <td>{session.sessionName}</td>
                       <td>{session.courseCode}</td>
-                      <td>{format(new Date(session.date), 'MMM dd, yyyy')}</td>
+                      <td>{format(new Date(session.date), "MMM dd, yyyy")}</td>
                       <td>{session.presentCount}</td>
                       <td>{session.totalStudents}</td>
                       <td>
-                        <span className={`px-2 py-1 rounded text-sm ${
-                          session.attendancePercentage >= 75 
-                            ? 'bg-green-100 text-green-800'
-                            : session.attendancePercentage >= 50
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded text-sm ${
+                            session.attendancePercentage >= 75
+                              ? "bg-green-100 text-green-800"
+                              : session.attendancePercentage >= 50
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                          }`}
+                        >
                           {session.attendancePercentage}%
                         </span>
                       </td>
@@ -323,7 +365,7 @@ const Reports: React.FC = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Reports
+export default Reports;

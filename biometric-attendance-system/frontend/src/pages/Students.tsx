@@ -1,90 +1,96 @@
 // src/pages/Students.tsx
-import React, { useState } from 'react'
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Download, 
-  Upload, 
-  UserCheck, 
-  UserX, 
-  Edit, 
+import React, { useState } from "react";
+import {
+  Plus,
+  Search,
+  Filter,
+  Download,
+  Upload,
+  UserCheck,
+  UserX,
+  Edit,
   Trash2,
   Fingerprint,
   Mail,
-  Phone
-} from 'lucide-react'
+  Phone,
+} from "lucide-react";
 
-import { useStudents } from '../hooks/useStudents'
-import { useCourses } from '../hooks/useCourses'
-import type { Student, CreateStudentData, Gender, StudentStatus } from '../types/student'
-import type { Course } from '../types/course'
+import { useStudents } from "../hooks/useStudents";
+import { useCourses } from "../hooks/useCourses";
+import type {
+  Student,
+  CreateStudentData,
+  Gender,
+  StudentStatus,
+} from "../types/student";
+import type { Course } from "../types/course";
 
-import Button from '../components/UI/Button'
-import Input from '../components/UI/Input'
-import Select from '../components/UI/Select'
-import Table from '../components/UI/Table'
-import Modal from '../components/UI/Modal'
-import Card from '../components/UI/Card'
-import Badge from '../components/UI/Badge'
-import SearchInput from '../components/UI/SearchInput'
-import LoadingSpinner from '../components/UI/LoadingSpinner'
-import BiometricEnrollment from '../components/Biometric/BiometricEnrollment'
-import StudentForm from '../components/Student/StudentForm'
+import Button from "../components/UI/Button";
+import Input from "../components/UI/Input";
+import Select from "../components/UI/Select";
+import Table from "../components/UI/Table";
+import Modal from "../components/UI/Modal";
+import Card from "../components/UI/Card";
+import Badge from "../components/UI/Badge";
+import SearchInput from "../components/UI/SearchInput";
+import LoadingSpinner from "../components/UI/LoadingSpinner";
+import BiometricEnrollment from "../components/Biometric/BiometricEnrollment";
+import StudentForm from "../components/Student/StudentForm";
 
 const Students: React.FC = () => {
   // State management
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCourse, setSelectedCourse] = useState('')
-  const [selectedStatus, setSelectedStatus] = useState('')
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [showBiometricModal, setShowBiometricModal] = useState(false)
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
-  const [bulkActions, setBulkActions] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showBiometricModal, setShowBiometricModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [bulkActions, setBulkActions] = useState<string[]>([]);
 
   // Data fetching
-  const { 
-    data: students, 
-    isLoading: studentsLoading, 
-    refetch: refetchStudents 
+  const {
+    data: students,
+    isLoading: studentsLoading,
+    refetch: refetchStudents,
   } = useStudents({
     search: searchQuery,
     courseId: selectedCourse,
-    status: selectedStatus as StudentStatus
-  })
+    status: selectedStatus as StudentStatus,
+  });
 
-  const { data: courses, isLoading: coursesLoading } = useCourses()
+  const { data: courses, isLoading: coursesLoading } = useCourses();
 
   // Table columns configuration
   const columns = [
     {
-      key: 'checkbox',
-      header: '',
-      width: '40px',
+      key: "checkbox",
+      header: "",
+      width: "40px",
       render: (student: Student) => (
         <input
           type="checkbox"
           checked={bulkActions.includes(student.id)}
           onChange={(e) => {
             if (e.target.checked) {
-              setBulkActions([...bulkActions, student.id])
+              setBulkActions([...bulkActions, student.id]);
             } else {
-              setBulkActions(bulkActions.filter(id => id !== student.id))
+              setBulkActions(bulkActions.filter((id) => id !== student.id));
             }
           }}
           className="border-gray-300 rounded text-primary-600 focus:ring-primary-500"
         />
-      )
+      ),
     },
     {
-      key: 'student',
-      header: 'Student',
+      key: "student",
+      header: "Student",
       render: (student: Student) => (
         <div className="flex items-center space-x-3">
           <div className="flex items-center justify-center w-10 h-10 bg-gray-300 rounded-full">
             <span className="text-sm font-medium text-gray-700">
-              {student.firstName[0]}{student.lastName[0]}
+              {student.firstName[0]}
+              {student.lastName[0]}
             </span>
           </div>
           <div>
@@ -94,11 +100,11 @@ const Students: React.FC = () => {
             <p className="text-sm text-gray-500">{student.matricNumber}</p>
           </div>
         </div>
-      )
+      ),
     },
     {
-      key: 'contact',
-      header: 'Contact',
+      key: "contact",
+      header: "Contact",
       render: (student: Student) => (
         <div className="space-y-1">
           {student.email && (
@@ -114,11 +120,11 @@ const Students: React.FC = () => {
             </div>
           )}
         </div>
-      )
+      ),
     },
     {
-      key: 'course',
-      header: 'Courses',
+      key: "course",
+      header: "Courses",
       render: (student: Student) => (
         <div className="space-y-1">
           {student.studentCourses?.slice(0, 2).map((sc) => (
@@ -132,43 +138,48 @@ const Students: React.FC = () => {
             </Badge>
           )}
         </div>
-      )
+      ),
     },
     {
-      key: 'biometric',
-      header: 'Biometric',
+      key: "biometric",
+      header: "Biometric",
       render: (student: Student) => (
         <div className="flex items-center space-x-2">
-          <Fingerprint className={`h-4 w-4 ${
-            student.biometricEnrolled ? 'text-success-600' : 'text-gray-400'
-          }`} />
-          <Badge 
-            variant={student.biometricEnrolled ? 'success' : 'error'} 
+          <Fingerprint
+            className={`h-4 w-4 ${
+              student.biometricEnrolled ? "text-success-600" : "text-gray-400"
+            }`}
+          />
+          <Badge
+            variant={student.biometricEnrolled ? "success" : "error"}
             size="sm"
           >
-            {student.biometricEnrolled ? 'Enrolled' : 'Not Enrolled'}
+            {student.biometricEnrolled ? "Enrolled" : "Not Enrolled"}
           </Badge>
         </div>
-      )
+      ),
     },
     {
-      key: 'status',
-      header: 'Status',
+      key: "status",
+      header: "Status",
       render: (student: Student) => (
-        <Badge 
+        <Badge
           variant={
-            student.status === 'ACTIVE' ? 'success' :
-            student.status === 'INACTIVE' ? 'warning' : 'secondary'
+            student.status === "ACTIVE"
+              ? "success"
+              : student.status === "INACTIVE"
+                ? "warning"
+                : "secondary"
           }
           size="sm"
         >
           {student.status}
         </Badge>
-      )
+      ),
     },
     {
-      key: 'actions',
-      header: 'Actions',
+      key: "actions",
+      header: "Actions",
       render: (student: Student) => (
         <div className="flex items-center space-x-2">
           <button
@@ -178,19 +189,23 @@ const Students: React.FC = () => {
           >
             <Edit className="w-4 h-4" />
           </button>
-          
+
           <button
             onClick={() => handleBiometricEnrollment(student)}
             className={`${
-              student.biometricEnrolled 
-                ? 'text-success-600 hover:text-success-900' 
-                : 'text-warning-600 hover:text-warning-900'
+              student.biometricEnrolled
+                ? "text-success-600 hover:text-success-900"
+                : "text-warning-600 hover:text-warning-900"
             }`}
-            title={student.biometricEnrolled ? 'Update Biometric' : 'Enroll Biometric'}
+            title={
+              student.biometricEnrolled
+                ? "Update Biometric"
+                : "Enroll Biometric"
+            }
           >
             <Fingerprint className="w-4 h-4" />
           </button>
-          
+
           <button
             onClick={() => handleDeleteStudent(student)}
             className="text-red-600 hover:text-red-900"
@@ -199,75 +214,84 @@ const Students: React.FC = () => {
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
-      )
-    }
-  ]
+      ),
+    },
+  ];
 
   // Event handlers
   const handleAddStudent = () => {
-    setSelectedStudent(null)
-    setShowAddModal(true)
-  }
+    setSelectedStudent(null);
+    setShowAddModal(true);
+  };
 
   const handleEditStudent = (student: Student) => {
-    setSelectedStudent(student)
-    setShowEditModal(true)
-  }
+    setSelectedStudent(student);
+    setShowEditModal(true);
+  };
 
   const handleBiometricEnrollment = (student: Student) => {
-    setSelectedStudent(student)
-    setShowBiometricModal(true)
-  }
+    setSelectedStudent(student);
+    setShowBiometricModal(true);
+  };
 
   const handleDeleteStudent = async (student: Student) => {
-    if (window.confirm(`Are you sure you want to delete ${student.firstName} ${student.lastName}?`)) {
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${student.firstName} ${student.lastName}?`
+      )
+    ) {
       // TODO: Implement delete functionality
-      console.log('Delete student:', student.id)
+      console.log("Delete student:", student.id);
     }
-  }
+  };
 
   const handleBulkAction = (action: string) => {
-    if (bulkActions.length === 0) return
-    
+    if (bulkActions.length === 0) return;
+
     switch (action) {
-      case 'delete':
+      case "delete":
         if (window.confirm(`Delete ${bulkActions.length} selected students?`)) {
           // TODO: Implement bulk delete
-          console.log('Bulk delete:', bulkActions)
+          console.log("Bulk delete:", bulkActions);
         }
-        break
-      case 'activate':
+        break;
+      case "activate":
         // TODO: Implement bulk activate
-        console.log('Bulk activate:', bulkActions)
-        break
-      case 'deactivate':
+        console.log("Bulk activate:", bulkActions);
+        break;
+      case "deactivate":
         // TODO: Implement bulk deactivate
-        console.log('Bulk deactivate:', bulkActions)
-        break
+        console.log("Bulk deactivate:", bulkActions);
+        break;
     }
-  }
+  };
 
   const handleExportStudents = () => {
     // TODO: Implement export functionality
-    console.log('Export students')
-  }
+    console.log("Export students");
+  };
 
   const handleImportStudents = () => {
     // TODO: Implement import functionality
-    console.log('Import students')
-  }
+    console.log("Import students");
+  };
 
-  const filteredStudents = students || []
+  const filteredStudents = students || [];
 
   return (
-    <div className="space-y-2 lg:space-y-6">
+    <div className="space-y- lg:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Students</h1>
-          <p className="text-gray-600">Manage student records and biometric enrollment</p>
+          <p className="text-gray-600">
+            Manage student records and biometric enrollment
+          </p>
         </div>
-        <Button onClick={handleAddStudent} className="flex items-center space-x-2">
+        <Button
+          onClick={handleAddStudent}
+          className="flex items-center space-x-2"
+        >
           <Plus className="w-4 h-4" />
           <span>Add Student</span>
         </Button>
@@ -295,7 +319,7 @@ const Students: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600">Biometric Enrolled</p>
               <p className="text-xl font-bold">
-                {filteredStudents.filter(s => s.biometricEnrolled).length}
+                {filteredStudents.filter((s) => s.biometricEnrolled).length}
               </p>
             </div>
           </div>
@@ -309,7 +333,7 @@ const Students: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600">Pending Enrollment</p>
               <p className="text-xl font-bold">
-                {filteredStudents.filter(s => !s.biometricEnrolled).length}
+                {filteredStudents.filter((s) => !s.biometricEnrolled).length}
               </p>
             </div>
           </div>
@@ -323,7 +347,7 @@ const Students: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600">Active Students</p>
               <p className="text-xl font-bold">
-                {filteredStudents.filter(s => s.status === 'ACTIVE').length}
+                {filteredStudents.filter((s) => s.status === "ACTIVE").length}
               </p>
             </div>
           </div>
@@ -333,13 +357,13 @@ const Students: React.FC = () => {
       {/* Filters and Actions */}
       <Card className="p-4">
         <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
-          <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
+          <div className="flex flex-col space-y- sm:flex-row sm:space-y-0 sm:space-x-4">
             <SearchInput
               onSearch={setSearchQuery}
               placeholder="Search students..."
               className="w-full sm:w-64"
             />
-            
+
             <Select
               value={selectedCourse}
               onChange={(e) => setSelectedCourse(e.target.value)}
@@ -352,7 +376,7 @@ const Students: React.FC = () => {
                 </option>
               ))}
             </Select>
-            
+
             <Select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
@@ -374,27 +398,27 @@ const Students: React.FC = () => {
                 <Button
                   size="sm"
                   variant="success"
-                  onClick={() => handleBulkAction('activate')}
+                  onClick={() => handleBulkAction("activate")}
                 >
                   Activate
                 </Button>
                 <Button
                   size="sm"
                   variant="warning"
-                  onClick={() => handleBulkAction('deactivate')}
+                  onClick={() => handleBulkAction("deactivate")}
                 >
                   Deactivate
                 </Button>
                 <Button
                   size="sm"
                   variant="error"
-                  onClick={() => handleBulkAction('delete')}
+                  onClick={() => handleBulkAction("delete")}
                 >
                   Delete
                 </Button>
               </div>
             )}
-            
+
             <Button
               size="sm"
               variant="secondary"
@@ -404,7 +428,7 @@ const Students: React.FC = () => {
               <Upload className="w-4 h-4" />
               <span>Import</span>
             </Button>
-            
+
             <Button
               size="sm"
               variant="secondary"
@@ -432,17 +456,17 @@ const Students: React.FC = () => {
       <StudentForm
         isOpen={showAddModal || showEditModal}
         onClose={() => {
-          setShowAddModal(false)
-          setShowEditModal(false)
-          setSelectedStudent(null)
+          setShowAddModal(false);
+          setShowEditModal(false);
+          setSelectedStudent(null);
         }}
         student={selectedStudent}
         courses={courses || []}
         onSuccess={() => {
-          refetchStudents()
-          setShowAddModal(false)
-          setShowEditModal(false)
-          setSelectedStudent(null)
+          refetchStudents();
+          setShowAddModal(false);
+          setShowEditModal(false);
+          setSelectedStudent(null);
         }}
       />
 
@@ -450,19 +474,19 @@ const Students: React.FC = () => {
         <BiometricEnrollment
           isOpen={showBiometricModal}
           onClose={() => {
-            setShowBiometricModal(false)
-            setSelectedStudent(null)
+            setShowBiometricModal(false);
+            setSelectedStudent(null);
           }}
           student={selectedStudent}
           onEnrollmentComplete={(updatedStudent) => {
-            refetchStudents()
-            setShowBiometricModal(false)
-            setSelectedStudent(null)
+            refetchStudents();
+            setShowBiometricModal(false);
+            setSelectedStudent(null);
           }}
         />
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Students
+export default Students;

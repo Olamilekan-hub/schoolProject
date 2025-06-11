@@ -1,56 +1,66 @@
 // src/pages/Dashboard.tsx
-import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { 
-  Users, 
-  UserCheck, 
-  Clock, 
-  TrendingUp, 
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  Users,
+  UserCheck,
+  Clock,
+  TrendingUp,
   Calendar,
   Plus,
   Fingerprint,
   AlertTriangle,
-  CheckCircle
-} from 'lucide-react'
-import { formatDistanceToNow, format } from 'date-fns'
+  CheckCircle,
+} from "lucide-react";
+import { formatDistanceToNow, format } from "date-fns";
 
-import { useAuth } from '../context/AuthContext'
-import { useDashboardData } from '../hooks/useDashboard'
-import Card from '../components/UI/Card'
-import Button from '../components/UI/Button'
-import Badge from '../components/UI/Badge'
-import LoadingSpinner from '../components/UI/LoadingSpinner'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
+import { useAuth } from "../context/AuthContext";
+import { useDashboardData } from "../hooks/useDashboard";
+import Card from "../components/UI/Card";
+import Button from "../components/UI/Button";
+import Badge from "../components/UI/Badge";
+import LoadingSpinner from "../components/UI/LoadingSpinner";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from "recharts";
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth()
-  const { data: dashboardData, isLoading, refetch } = useDashboardData()
-  const [currentTime, setCurrentTime] = useState(new Date())
+  const { user } = useAuth();
+  const { data: dashboardData, isLoading, refetch } = useDashboardData();
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update current time every minute
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 60000)
+      setCurrentTime(new Date());
+    }, 60000);
 
-    return () => clearInterval(timer)
-  }, [])
+    return () => clearInterval(timer);
+  }, []);
 
   // Auto-refresh dashboard data every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      refetch()
-    }, 30000)
+      refetch();
+    }, 30000);
 
-    return () => clearInterval(interval)
-  }, [refetch])
+    return () => clearInterval(interval);
+  }, [refetch]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />
       </div>
-    )
+    );
   }
 
   const stats = dashboardData?.stats || {
@@ -60,15 +70,15 @@ const Dashboard: React.FC = () => {
     todayAttendance: 0,
     activeStudents: 0,
     enrolledBiometric: 0,
-    attendanceRate: 0
-  }
+    attendanceRate: 0,
+  };
 
-  const recentAttendance = dashboardData?.recentAttendance || []
-  const upcomingSessions = dashboardData?.upcomingSessions || []
-  const attendanceTrend = dashboardData?.attendanceTrend || []
+  const recentAttendance = dashboardData?.recentAttendance || [];
+  const upcomingSessions = dashboardData?.upcomingSessions || [];
+  const attendanceTrend = dashboardData?.attendanceTrend || [];
 
   return (
-    <div className="space-y-2 lg:space-y-6 lg:pl-20">
+    <div className="space-y- lg:space-y-6 lg:pl-20">
       {/* Welcome Header */}
       <div className="p-6 text-white rounded-lg bg-gradient-to-r from-primary-600 to-primary-700">
         <div className="flex items-center justify-between">
@@ -77,7 +87,8 @@ const Dashboard: React.FC = () => {
               Welcome back, {user?.firstName}! 👋
             </h1>
             <p className="mt-1 text-primary-100">
-              {format(currentTime, 'EEEE, MMMM do, yyyy')} • {format(currentTime, 'h:mm a')}
+              {format(currentTime, "EEEE, MMMM do, yyyy")} •{" "}
+              {format(currentTime, "h:mm a")}
             </p>
             <p className="mt-2 text-sm text-primary-200">
               Here's what's happening with your attendance system today.
@@ -99,8 +110,12 @@ const Dashboard: React.FC = () => {
               <Users className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Students</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
+              <p className="text-sm font-medium text-gray-600">
+                Total Students
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.totalStudents}
+              </p>
             </div>
           </div>
         </Card>
@@ -111,8 +126,12 @@ const Dashboard: React.FC = () => {
               <UserCheck className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Today's Attendance</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.todayAttendance}</p>
+              <p className="text-sm font-medium text-gray-600">
+                Today's Attendance
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.todayAttendance}
+              </p>
             </div>
           </div>
         </Card>
@@ -123,8 +142,12 @@ const Dashboard: React.FC = () => {
               <Fingerprint className="w-6 h-6 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Biometric Enrolled</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.enrolledBiometric}</p>
+              <p className="text-sm font-medium text-gray-600">
+                Biometric Enrolled
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.enrolledBiometric}
+              </p>
             </div>
           </div>
         </Card>
@@ -135,8 +158,12 @@ const Dashboard: React.FC = () => {
               <TrendingUp className="w-6 h-6 text-yellow-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Attendance Rate</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.attendanceRate}%</p>
+              <p className="text-sm font-medium text-gray-600">
+                Attendance Rate
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.attendanceRate}%
+              </p>
             </div>
           </div>
         </Card>
@@ -153,12 +180,12 @@ const Dashboard: React.FC = () => {
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="attendance" 
-                  stroke="#3B82F6" 
+                <Line
+                  type="monotone"
+                  dataKey="attendance"
+                  stroke="#3B82F6"
                   strokeWidth={2}
-                  dot={{ fill: '#3B82F6' }}
+                  dot={{ fill: "#3B82F6" }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -187,10 +214,15 @@ const Dashboard: React.FC = () => {
         <Card title="Recent Attendance" className="p-6">
           <div className="space-y-4">
             {recentAttendance.length === 0 ? (
-              <p className="py-4 text-center text-gray-500">No recent attendance records</p>
+              <p className="py-4 text-center text-gray-500">
+                No recent attendance records
+              </p>
             ) : (
               recentAttendance.slice(0, 5).map((record: any) => (
-                <div key={record.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+                <div
+                  key={record.id}
+                  className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0"
+                >
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-success-100">
                       <CheckCircle className="w-4 h-4 text-success-600" />
@@ -200,7 +232,8 @@ const Dashboard: React.FC = () => {
                         {record.student?.firstName} {record.student?.lastName}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {record.session?.course?.courseCode} - {record.session?.sessionName}
+                        {record.session?.course?.courseCode} -{" "}
+                        {record.session?.sessionName}
                       </p>
                     </div>
                   </div>
@@ -241,7 +274,10 @@ const Dashboard: React.FC = () => {
               </div>
             ) : (
               upcomingSessions.slice(0, 5).map((session: any) => (
-                <div key={session.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+                <div
+                  key={session.id}
+                  className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0"
+                >
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary-100">
                       <Clock className="w-4 h-4 text-primary-600" />
@@ -251,16 +287,17 @@ const Dashboard: React.FC = () => {
                         {session.sessionName}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {session.course?.courseCode} - {session.course?.courseTitle}
+                        {session.course?.courseCode} -{" "}
+                        {session.course?.courseTitle}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium text-gray-900">
-                      {format(new Date(session.sessionDate), 'MMM dd, yyyy')}
+                      {format(new Date(session.sessionDate), "MMM dd, yyyy")}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {format(new Date(session.startTime), 'h:mm a')}
+                      {format(new Date(session.startTime), "h:mm a")}
                     </p>
                   </div>
                 </div>
@@ -281,28 +318,44 @@ const Dashboard: React.FC = () => {
       <Card title="Quick Actions" className="p-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link to="/students">
-            <Button variant="primary" fullWidth className="flex flex-col items-center justify-center h-16 space-y-2">
+            <Button
+              variant="primary"
+              fullWidth
+              className="flex flex-col items-center justify-center h-16 space-y-"
+            >
               <Users className="w-5 h-5" />
               <span className="text-sm">Add Student</span>
             </Button>
           </Link>
-          
+
           <Link to="/attendance">
-            <Button variant="success" fullWidth className="flex flex-col items-center justify-center h-16 space-y-2">
+            <Button
+              variant="success"
+              fullWidth
+              className="flex flex-col items-center justify-center h-16 space-y-"
+            >
               <UserCheck className="w-5 h-5" />
               <span className="text-sm">Take Attendance</span>
             </Button>
           </Link>
-          
+
           <Link to="/reports">
-            <Button variant="warning" fullWidth className="flex flex-col items-center justify-center h-16 space-y-2">
+            <Button
+              variant="warning"
+              fullWidth
+              className="flex flex-col items-center justify-center h-16 space-y-"
+            >
               <TrendingUp className="w-5 h-5" />
               <span className="text-sm">View Reports</span>
             </Button>
           </Link>
-          
+
           <Link to="/profile">
-            <Button variant="secondary" fullWidth className="flex flex-col items-center justify-center h-16 space-y-2">
+            <Button
+              variant="secondary"
+              fullWidth
+              className="flex flex-col items-center justify-center h-16 space-y-"
+            >
               <Fingerprint className="w-5 h-5" />
               <span className="text-sm">Profile</span>
             </Button>
@@ -328,7 +381,7 @@ const Dashboard: React.FC = () => {
         </div>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;
