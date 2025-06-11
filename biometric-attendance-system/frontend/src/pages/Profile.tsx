@@ -78,7 +78,7 @@ const Profile: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-2 lg:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -88,7 +88,7 @@ const Profile: React.FC = () => {
         
         {!isEditing && (
           <Button onClick={() => setIsEditing(true)}>
-            <Edit3 className="h-4 w-4 mr-2" />
+            <Edit3 className="w-4 h-4 mr-2" />
             Edit Profile
           </Button>
         )}
@@ -97,10 +97,10 @@ const Profile: React.FC = () => {
       {/* Profile Information */}
       <Card title="Personal Information" className="p-6">
         <form onSubmit={handleSubmit(handleProfileUpdate)}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="flex items-center space-x-4">
-              <div className="h-20 w-20 bg-primary-100 rounded-full flex items-center justify-center">
-                <User className="h-10 w-10 text-primary-600" />
+              <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary-100">
+                <User className="w-10 h-10 text-primary-600" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -112,7 +112,7 @@ const Profile: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 mt-6 md:grid-cols-2">
             <Input
               label="First Name"
               {...register('firstName', { required: 'First name is required' })}
@@ -159,13 +159,13 @@ const Profile: React.FC = () => {
           </div>
 
           {isEditing && (
-            <div className="mt-6 flex justify-end space-x-4">
+            <div className="flex justify-end mt-6 space-x-4">
               <Button type="button" variant="secondary" onClick={handleCancelEdit}>
-                <X className="h-4 w-4 mr-2" />
+                <X className="w-4 h-4 mr-2" />
                 Cancel
               </Button>
               <Button type="submit" loading={isSubmitting}>
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="w-4 h-4 mr-2" />
                 Save Changes
               </Button>
             </div>
@@ -176,9 +176,9 @@ const Profile: React.FC = () => {
       {/* Account Security */}
       <Card title="Account Security" className="p-6">
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50">
             <div className="flex items-center space-x-3">
-              <Key className="h-5 w-5 text-gray-600" />
+              <Key className="w-5 h-5 text-gray-600" />
               <div>
                 <p className="font-medium text-gray-900">Password</p>
                 <p className="text-sm text-gray-600">Last changed 30 days ago</p>
@@ -189,9 +189,9 @@ const Profile: React.FC = () => {
             </Button>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50">
             <div className="flex items-center space-x-3">
-              <Shield className="h-5 w-5 text-green-600" />
+              <Shield className="w-5 h-5 text-green-600" />
               <div>
                 <p className="font-medium text-gray-900">Two-Factor Authentication</p>
                 <p className="text-sm text-gray-600">Not enabled</p>
@@ -206,7 +206,7 @@ const Profile: React.FC = () => {
 
       {/* Account Statistics */}
       <Card title="Account Statistics" className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="text-center">
             <p className="text-2xl font-bold text-primary-600">
               {user?.courses?.length || 0}
@@ -265,7 +265,7 @@ const Profile: React.FC = () => {
             error={passwordErrors.confirmPassword?.message as string}
           />
 
-          <div className="flex justify-end space-x-4 pt-4">
+          <div className="flex justify-end pt-4 space-x-4">
             <Button 
               type="button" 
               variant="secondary" 

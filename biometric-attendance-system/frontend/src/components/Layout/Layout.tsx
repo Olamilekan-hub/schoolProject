@@ -18,7 +18,7 @@ const Layout: React.FC = () => {
 
         {/* Page content */}
         <main className="flex-1 pl-2 overflow-x-hidden overflow-y-auto bg-gray-100 lg:pl-28">
-          <div className="container px-6 py-8 mx-auto">
+          <div className="px-6 py-8 mx-auto lg:container">
             <Outlet />
           </div>
         </main>

@@ -79,7 +79,7 @@ const Reports: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2 lg:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -89,11 +89,11 @@ const Reports: React.FC = () => {
         
         <div className="flex items-center space-x-2">
           <Button variant="secondary" onClick={() => handleExport('PDF')}>
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="w-4 h-4 mr-2" />
             Export PDF
           </Button>
           <Button variant="secondary" onClick={() => handleExport('EXCEL')}>
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="w-4 h-4 mr-2" />
             Export Excel
           </Button>
         </div>
@@ -101,9 +101,9 @@ const Reports: React.FC = () => {
 
       {/* Filters */}
       <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block mb-1 text-sm font-medium text-gray-700">
               Start Date
             </label>
             <Input
@@ -114,7 +114,7 @@ const Reports: React.FC = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block mb-1 text-sm font-medium text-gray-700">
               End Date
             </label>
             <Input
@@ -150,11 +150,11 @@ const Reports: React.FC = () => {
       </Card>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card className="p-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <Users className="h-5 w-5 text-blue-600" />
+              <Users className="w-5 h-5 text-blue-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Students</p>
@@ -166,7 +166,7 @@ const Reports: React.FC = () => {
         <Card className="p-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-green-100 rounded-lg">
-              <Calendar className="h-5 w-5 text-green-600" />
+              <Calendar className="w-5 h-5 text-green-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Sessions</p>
@@ -178,7 +178,7 @@ const Reports: React.FC = () => {
         <Card className="p-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-purple-100 rounded-lg">
-              <TrendingUp className="h-5 w-5 text-purple-600" />
+              <TrendingUp className="w-5 h-5 text-purple-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Avg Attendance</p>
@@ -190,7 +190,7 @@ const Reports: React.FC = () => {
         <Card className="p-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-yellow-100 rounded-lg">
-              <FileText className="h-5 w-5 text-yellow-600" />
+              <FileText className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Records</p>
@@ -201,7 +201,7 @@ const Reports: React.FC = () => {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Attendance Trend */}
         <Card title="Attendance Trend" className="p-6">
           <div className="h-64">
@@ -244,7 +244,7 @@ const Reports: React.FC = () => {
           {/* Student Attendance Table */}
           <Card title="Student Attendance Details" className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full table">
+              <table className="table min-w-full">
                 <thead>
                   <tr>
                     <th>Student</th>
@@ -284,7 +284,7 @@ const Reports: React.FC = () => {
           {/* Session Details Table */}
           <Card title="Session Details" className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full table">
+              <table className="table min-w-full">
                 <thead>
                   <tr>
                     <th>Session</th>

@@ -161,9 +161,9 @@ const Attendance: React.FC = () => {
               {totalRecords} total records
             </p>
             {totalRecords > 0 && (
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+              <div className="w-full h-2 mt-1 bg-gray-200 rounded-full">
                 <div 
-                  className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                  className="h-2 transition-all duration-300 bg-green-600 rounded-full" 
                   style={{ width: `${(presentCount / totalRecords) * 100}%` }}
                 />
               </div>
@@ -187,7 +187,7 @@ const Attendance: React.FC = () => {
           </Badge>
           {session.allowRemoteMarking && (
             <Tooltip content="Remote attendance enabled">
-              <LinkIcon className="h-4 w-4 text-blue-500" />
+              <LinkIcon className="w-4 h-4 text-blue-500" />
             </Tooltip>
           )}
         </div>
@@ -204,9 +204,9 @@ const Attendance: React.FC = () => {
                 <Button
                   size="sm"
                   onClick={() => handleMarkAttendance(session)}
-                  className="h-8 w-8 p-0"
+                  className="w-8 h-8 p-0"
                 >
-                  <UserCheck className="h-4 w-4" />
+                  <UserCheck className="w-4 h-4" />
                 </Button>
               </Tooltip>
               
@@ -215,9 +215,9 @@ const Attendance: React.FC = () => {
                   size="sm"
                   variant="secondary"
                   onClick={() => handleGenerateLink(session)}
-                  className="h-8 w-8 p-0"
+                  className="w-8 h-8 p-0"
                 >
-                  <QrCode className="h-4 w-4" />
+                  <QrCode className="w-4 h-4" />
                 </Button>
               </Tooltip>
               
@@ -226,9 +226,9 @@ const Attendance: React.FC = () => {
                   size="sm"
                   variant="warning"
                   onClick={() => handleCloseSession(session)}
-                  className="h-8 w-8 p-0"
+                  className="w-8 h-8 p-0"
                 >
-                  <Square className="h-4 w-4" />
+                  <Square className="w-4 h-4" />
                 </Button>
               </Tooltip>
             </>
@@ -239,9 +239,9 @@ const Attendance: React.FC = () => {
               size="sm"
               variant="secondary"
               onClick={() => handleViewLive(session)}
-              className="h-8 w-8 p-0"
+              className="w-8 h-8 p-0"
             >
-              <Eye className="h-4 w-4" />
+              <Eye className="w-4 h-4" />
             </Button>
           </Tooltip>
           
@@ -250,9 +250,9 @@ const Attendance: React.FC = () => {
               size="sm"
               variant="secondary"
               onClick={() => handleEditSession(session)}
-              className="h-8 w-8 p-0"
+              className="w-8 h-8 p-0"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="w-4 h-4" />
             </Button>
           </Tooltip>
           
@@ -261,9 +261,9 @@ const Attendance: React.FC = () => {
               size="sm"
               variant="error"
               onClick={() => handleDeleteSession(session)}
-              className="h-8 w-8 p-0"
+              className="w-8 h-8 p-0"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="w-4 h-4" />
             </Button>
           </Tooltip>
         </div>
@@ -389,13 +389,13 @@ const Attendance: React.FC = () => {
 
       default:
         return (
-          <div className="space-y-6">
+          <div className="lg:space-y-6">
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
               <Card className="p-4">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
-                    <Calendar className="h-5 w-5 text-blue-600" />
+                    <Calendar className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Today's Sessions</p>
@@ -407,7 +407,7 @@ const Attendance: React.FC = () => {
               <Card className="p-4">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-green-100 rounded-lg">
-                    <Play className="h-5 w-5 text-green-600" />
+                    <Play className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Active Sessions</p>
@@ -419,7 +419,7 @@ const Attendance: React.FC = () => {
               <Card className="p-4">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-purple-100 rounded-lg">
-                    <UserCheck className="h-5 w-5 text-purple-600" />
+                    <UserCheck className="w-5 h-5 text-purple-600" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Total Attendance</p>
@@ -431,7 +431,7 @@ const Attendance: React.FC = () => {
               <Card className="p-4">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-yellow-100 rounded-lg">
-                    <Clock className="h-5 w-5 text-yellow-600" />
+                    <Clock className="w-5 h-5 text-yellow-600" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Total Sessions</p>
@@ -443,10 +443,10 @@ const Attendance: React.FC = () => {
 
             {/* Active Sessions Alert */}
             {activeSessions.length > 0 && (
-              <Card className="p-4 bg-green-50 border-green-200">
+              <Card className="p-4 border-green-200 bg-green-50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                     <div>
                       <p className="font-medium text-green-900">
                         {activeSessions.length} Active Session{activeSessions.length > 1 ? 's' : ''}
@@ -478,8 +478,8 @@ const Attendance: React.FC = () => {
 
             {/* Filters */}
             <Card className="p-4">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+              <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+                <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
                   <SearchInput
                     onSearch={setSearchQuery}
                     placeholder="Search sessions..."
@@ -529,7 +529,7 @@ const Attendance: React.FC = () => {
                     onClick={handleExportSessions}
                     className="flex items-center space-x-1"
                   >
-                    <Download className="h-4 w-4" />
+                    <Download className="w-4 h-4" />
                     <span>Export</span>
                   </Button>
                   
@@ -539,7 +539,7 @@ const Attendance: React.FC = () => {
                     onClick={() => refetch()}
                     className="flex items-center space-x-1"
                   >
-                    <RefreshCw className="h-4 w-4" />
+                    <RefreshCw className="w-4 h-4" />
                     <span>Refresh</span>
                   </Button>
                 </div>
@@ -557,7 +557,7 @@ const Attendance: React.FC = () => {
                     </p>
                   </div>
                   <Button onClick={handleCreateSession}>
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="w-4 h-4 mr-2" />
                     Create Session
                   </Button>
                 </div>
@@ -628,7 +628,7 @@ const Attendance: React.FC = () => {
           </p>
           
           {selectedSession && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-left">
+            <div className="p-3 text-left border border-blue-200 rounded-lg bg-blue-50">
               <h4 className="font-medium text-blue-900">Session Details:</h4>
               <p className="text-sm text-blue-700">
                 {selectedSession.sessionName}
@@ -639,13 +639,13 @@ const Attendance: React.FC = () => {
             </div>
           )}
           
-          <div className="p-4 bg-gray-50 rounded-lg">
+          <div className="p-4 rounded-lg bg-gray-50">
             <QRCodeGenerator value={attendanceLink} size={200} />
           </div>
           
-          <div className="p-3 bg-gray-50 rounded-lg text-left">
-            <p className="text-sm font-medium text-gray-700 mb-1">Attendance Link:</p>
-            <p className="text-sm text-gray-600 break-all font-mono">{attendanceLink}</p>
+          <div className="p-3 text-left rounded-lg bg-gray-50">
+            <p className="mb-1 text-sm font-medium text-gray-700">Attendance Link:</p>
+            <p className="font-mono text-sm text-gray-600 break-all">{attendanceLink}</p>
           </div>
           
           <div className="grid grid-cols-2 gap-2">
@@ -654,7 +654,7 @@ const Attendance: React.FC = () => {
               onClick={handleCopyLink}
               className="flex items-center space-x-2"
             >
-              <Copy className="h-4 w-4" />
+              <Copy className="w-4 h-4" />
               <span>Copy Link</span>
             </Button>
             <Button
@@ -662,12 +662,12 @@ const Attendance: React.FC = () => {
               onClick={handleShareWhatsApp}
               className="flex items-center space-x-2"
             >
-              <Share2 className="h-4 w-4" />
+              <Share2 className="w-4 h-4" />
               <span>WhatsApp</span>
             </Button>
           </div>
           
-          <div className="text-left text-xs text-gray-500 space-y-1">
+          <div className="space-y-1 text-xs text-left text-gray-500">
             <p>• Link expires in 24 hours</p>
             <p>• Students need their matric number to mark attendance</p>
             <p>• Biometric verification required if enrolled</p>

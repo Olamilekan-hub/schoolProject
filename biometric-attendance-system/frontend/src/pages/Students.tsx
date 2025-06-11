@@ -73,7 +73,7 @@ const Students: React.FC = () => {
               setBulkActions(bulkActions.filter(id => id !== student.id))
             }
           }}
-          className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+          className="border-gray-300 rounded text-primary-600 focus:ring-primary-500"
         />
       )
     },
@@ -82,7 +82,7 @@ const Students: React.FC = () => {
       header: 'Student',
       render: (student: Student) => (
         <div className="flex items-center space-x-3">
-          <div className="h-10 w-10 bg-gray-300 rounded-full flex items-center justify-center">
+          <div className="flex items-center justify-center w-10 h-10 bg-gray-300 rounded-full">
             <span className="text-sm font-medium text-gray-700">
               {student.firstName[0]}{student.lastName[0]}
             </span>
@@ -103,13 +103,13 @@ const Students: React.FC = () => {
         <div className="space-y-1">
           {student.email && (
             <div className="flex items-center space-x-1">
-              <Mail className="h-3 w-3 text-gray-400" />
+              <Mail className="w-3 h-3 text-gray-400" />
               <span className="text-xs text-gray-600">{student.email}</span>
             </div>
           )}
           {student.phone && (
             <div className="flex items-center space-x-1">
-              <Phone className="h-3 w-3 text-gray-400" />
+              <Phone className="w-3 h-3 text-gray-400" />
               <span className="text-xs text-gray-600">{student.phone}</span>
             </div>
           )}
@@ -176,7 +176,7 @@ const Students: React.FC = () => {
             className="text-primary-600 hover:text-primary-900"
             title="Edit Student"
           >
-            <Edit className="h-4 w-4" />
+            <Edit className="w-4 h-4" />
           </button>
           
           <button
@@ -188,7 +188,7 @@ const Students: React.FC = () => {
             }`}
             title={student.biometricEnrolled ? 'Update Biometric' : 'Enroll Biometric'}
           >
-            <Fingerprint className="h-4 w-4" />
+            <Fingerprint className="w-4 h-4" />
           </button>
           
           <button
@@ -196,7 +196,7 @@ const Students: React.FC = () => {
             className="text-red-600 hover:text-red-900"
             title="Delete Student"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       )
@@ -260,7 +260,7 @@ const Students: React.FC = () => {
   const filteredStudents = students || []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2 lg:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -268,17 +268,17 @@ const Students: React.FC = () => {
           <p className="text-gray-600">Manage student records and biometric enrollment</p>
         </div>
         <Button onClick={handleAddStudent} className="flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
+          <Plus className="w-4 h-4" />
           <span>Add Student</span>
         </Button>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card className="p-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <UserCheck className="h-5 w-5 text-blue-600" />
+              <UserCheck className="w-5 h-5 text-blue-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Students</p>
@@ -290,7 +290,7 @@ const Students: React.FC = () => {
         <Card className="p-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-green-100 rounded-lg">
-              <Fingerprint className="h-5 w-5 text-green-600" />
+              <Fingerprint className="w-5 h-5 text-green-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Biometric Enrolled</p>
@@ -304,7 +304,7 @@ const Students: React.FC = () => {
         <Card className="p-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-yellow-100 rounded-lg">
-              <UserX className="h-5 w-5 text-yellow-600" />
+              <UserX className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Pending Enrollment</p>
@@ -318,7 +318,7 @@ const Students: React.FC = () => {
         <Card className="p-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-purple-100 rounded-lg">
-              <UserCheck className="h-5 w-5 text-purple-600" />
+              <UserCheck className="w-5 h-5 text-purple-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Active Students</p>
@@ -332,8 +332,8 @@ const Students: React.FC = () => {
 
       {/* Filters and Actions */}
       <Card className="p-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+        <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+          <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
             <SearchInput
               onSearch={setSearchQuery}
               placeholder="Search students..."
@@ -401,7 +401,7 @@ const Students: React.FC = () => {
               onClick={handleImportStudents}
               className="flex items-center space-x-1"
             >
-              <Upload className="h-4 w-4" />
+              <Upload className="w-4 h-4" />
               <span>Import</span>
             </Button>
             
@@ -411,7 +411,7 @@ const Students: React.FC = () => {
               onClick={handleExportStudents}
               className="flex items-center space-x-1"
             >
-              <Download className="h-4 w-4" />
+              <Download className="w-4 h-4" />
               <span>Export</span>
             </Button>
           </div>

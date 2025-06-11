@@ -68,35 +68,35 @@ const Dashboard: React.FC = () => {
   const attendanceTrend = dashboardData?.attendanceTrend || []
 
   return (
-    <div className="space-y-6 pl-20">
+    <div className="space-y-2 lg:space-y-6 lg:pl-20">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg p-6 text-white">
+      <div className="p-6 text-white rounded-lg bg-gradient-to-r from-primary-600 to-primary-700">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">
               Welcome back, {user?.firstName}! 👋
             </h1>
-            <p className="text-primary-100 mt-1">
+            <p className="mt-1 text-primary-100">
               {format(currentTime, 'EEEE, MMMM do, yyyy')} • {format(currentTime, 'h:mm a')}
             </p>
-            <p className="text-primary-200 text-sm mt-2">
+            <p className="mt-2 text-sm text-primary-200">
               Here's what's happening with your attendance system today.
             </p>
           </div>
           <div className="hidden md:block">
-            <div className="h-20 w-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-              <Fingerprint className="h-10 w-10 text-white" />
+            <div className="flex items-center justify-center w-20 h-20 bg-white rounded-full bg-opacity-20">
+              <Fingerprint className="w-10 h-10 text-white" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="p-6">
           <div className="flex items-center">
             <div className="p-3 bg-blue-100 rounded-lg">
-              <Users className="h-6 w-6 text-blue-600" />
+              <Users className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Students</p>
@@ -108,7 +108,7 @@ const Dashboard: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center">
             <div className="p-3 bg-green-100 rounded-lg">
-              <UserCheck className="h-6 w-6 text-green-600" />
+              <UserCheck className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Today's Attendance</p>
@@ -120,7 +120,7 @@ const Dashboard: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center">
             <div className="p-3 bg-purple-100 rounded-lg">
-              <Fingerprint className="h-6 w-6 text-purple-600" />
+              <Fingerprint className="w-6 h-6 text-purple-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Biometric Enrolled</p>
@@ -132,7 +132,7 @@ const Dashboard: React.FC = () => {
         <Card className="p-6">
           <div className="flex items-center">
             <div className="p-3 bg-yellow-100 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-yellow-600" />
+              <TrendingUp className="w-6 h-6 text-yellow-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Attendance Rate</p>
@@ -143,7 +143,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Charts and Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Attendance Trend Chart */}
         <Card title="Attendance Trend (Last 7 Days)" className="p-6">
           <div className="h-64">
@@ -182,18 +182,18 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent Activity and Upcoming Sessions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recent Attendance */}
         <Card title="Recent Attendance" className="p-6">
           <div className="space-y-4">
             {recentAttendance.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No recent attendance records</p>
+              <p className="py-4 text-center text-gray-500">No recent attendance records</p>
             ) : (
               recentAttendance.slice(0, 5).map((record: any) => (
                 <div key={record.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                   <div className="flex items-center space-x-3">
-                    <div className="h-8 w-8 bg-success-100 rounded-full flex items-center justify-center">
-                      <CheckCircle className="h-4 w-4 text-success-600" />
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-success-100">
+                      <CheckCircle className="w-4 h-4 text-success-600" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
@@ -208,7 +208,7 @@ const Dashboard: React.FC = () => {
                     <Badge variant="success" size="sm">
                       {record.status}
                     </Badge>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="mt-1 text-xs text-gray-500">
                       {formatDistanceToNow(new Date(record.markedAt))} ago
                     </p>
                   </div>
@@ -229,12 +229,12 @@ const Dashboard: React.FC = () => {
         <Card title="Upcoming Sessions" className="p-6">
           <div className="space-y-4">
             {upcomingSessions.length === 0 ? (
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <div className="py-8 text-center">
+                <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                 <p className="text-gray-500">No upcoming sessions</p>
                 <Link to="/attendance">
                   <Button variant="primary" size="sm" className="mt-4">
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="w-4 h-4 mr-2" />
                     Create Session
                   </Button>
                 </Link>
@@ -243,8 +243,8 @@ const Dashboard: React.FC = () => {
               upcomingSessions.slice(0, 5).map((session: any) => (
                 <div key={session.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                   <div className="flex items-center space-x-3">
-                    <div className="h-8 w-8 bg-primary-100 rounded-full flex items-center justify-center">
-                      <Clock className="h-4 w-4 text-primary-600" />
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary-100">
+                      <Clock className="w-4 h-4 text-primary-600" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
@@ -279,31 +279,31 @@ const Dashboard: React.FC = () => {
 
       {/* Quick Actions */}
       <Card title="Quick Actions" className="p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link to="/students">
-            <Button variant="primary" fullWidth className="h-16 flex flex-col items-center justify-center space-y-2">
-              <Users className="h-5 w-5" />
+            <Button variant="primary" fullWidth className="flex flex-col items-center justify-center h-16 space-y-2">
+              <Users className="w-5 h-5" />
               <span className="text-sm">Add Student</span>
             </Button>
           </Link>
           
           <Link to="/attendance">
-            <Button variant="success" fullWidth className="h-16 flex flex-col items-center justify-center space-y-2">
-              <UserCheck className="h-5 w-5" />
+            <Button variant="success" fullWidth className="flex flex-col items-center justify-center h-16 space-y-2">
+              <UserCheck className="w-5 h-5" />
               <span className="text-sm">Take Attendance</span>
             </Button>
           </Link>
           
           <Link to="/reports">
-            <Button variant="warning" fullWidth className="h-16 flex flex-col items-center justify-center space-y-2">
-              <TrendingUp className="h-5 w-5" />
+            <Button variant="warning" fullWidth className="flex flex-col items-center justify-center h-16 space-y-2">
+              <TrendingUp className="w-5 h-5" />
               <span className="text-sm">View Reports</span>
             </Button>
           </Link>
           
           <Link to="/profile">
-            <Button variant="secondary" fullWidth className="h-16 flex flex-col items-center justify-center space-y-2">
-              <Fingerprint className="h-5 w-5" />
+            <Button variant="secondary" fullWidth className="flex flex-col items-center justify-center h-16 space-y-2">
+              <Fingerprint className="w-5 h-5" />
               <span className="text-sm">Profile</span>
             </Button>
           </Link>
@@ -312,17 +312,17 @@ const Dashboard: React.FC = () => {
 
       {/* System Status */}
       <Card title="System Status" className="p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex items-center space-x-3">
-            <div className="h-3 w-3 bg-green-500 rounded-full"></div>
+            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
             <span className="text-sm text-gray-600">Database Connection</span>
           </div>
           <div className="flex items-center space-x-3">
-            <div className="h-3 w-3 bg-green-500 rounded-full"></div>
+            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
             <span className="text-sm text-gray-600">Biometric Service</span>
           </div>
           <div className="flex items-center space-x-3">
-            <div className="h-3 w-3 bg-green-500 rounded-full"></div>
+            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
             <span className="text-sm text-gray-600">Real-time Updates</span>
           </div>
         </div>

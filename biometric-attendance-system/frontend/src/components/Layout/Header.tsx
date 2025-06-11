@@ -59,22 +59,22 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   }
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 pl-56">
+    <header className="bg-white border-b border-gray-200 shadow-sm lg:pl-56">
       <div className="flex items-center justify-between px-6 py-4">
         {/* Left side */}
         <div className="flex items-center space-x-4">
           {/* Mobile menu button */}
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            className="p-2 text-gray-600 rounded-lg lg:hidden hover:text-gray-900 hover:bg-gray-100"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="w-6 h-6" />
           </button>
           
           {/* Logo and title */}
           <div className="flex items-center space-x-3">
-            <div className="h-8 w-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <Fingerprint className="h-5 w-5 text-white" />
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-600">
+              <Fingerprint className="w-5 h-5 text-white" />
             </div>
             <div className="hidden sm:block">
               <h1 className="text-xl font-semibold text-gray-900">
@@ -91,11 +91,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+              className="relative p-2 text-gray-600 rounded-lg hover:text-gray-900 hover:bg-gray-100"
             >
-              <Bell className="h-6 w-6" />
+              <Bell className="w-6 h-6" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                <span className="absolute flex items-center justify-center w-5 h-5 text-xs text-white bg-red-500 rounded-full -top-1 -right-1">
                   {unreadCount}
                 </span>
               )}
@@ -103,11 +103,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
             {/* Notifications dropdown */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+              <div className="absolute right-0 z-50 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg w-80">
                 <div className="p-4 border-b border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
                 </div>
-                <div className="max-h-96 overflow-y-auto">
+                <div className="overflow-y-auto max-h-96">
                   {notifications.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">
                       No notifications
@@ -131,10 +131,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                             <p className="text-sm font-medium text-gray-900">
                               {notification.title}
                             </p>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="mt-1 text-sm text-gray-600">
                               {notification.message}
                             </p>
-                            <p className="text-xs text-gray-500 mt-2">
+                            <p className="mt-2 text-xs text-gray-500">
                               {formatDistanceToNow(notification.time)} ago
                             </p>
                           </div>
@@ -144,7 +144,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                   )}
                 </div>
                 <div className="p-4 border-t border-gray-200">
-                  <button className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                  <button className="text-sm font-medium text-primary-600 hover:text-primary-700">
                     View all notifications
                   </button>
                 </div>
@@ -156,29 +156,29 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-3 p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              className="flex items-center p-2 space-x-3 text-gray-600 rounded-lg hover:text-gray-900 hover:bg-gray-100"
             >
-              <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <User className="h-5 w-5 text-gray-600" />
+              <div className="flex items-center justify-center w-8 h-8 bg-gray-300 rounded-full">
+                <User className="w-5 h-5 text-gray-600" />
               </div>
-              <div className="hidden md:block text-left">
+              <div className="hidden text-left md:block">
                 <p className="text-sm font-medium text-gray-900">
                   {user?.firstName} {user?.lastName}
                 </p>
                 <p className="text-xs text-gray-500 capitalize">{user?.role.toLowerCase()}</p>
               </div>
-              <ChevronDown className="h-4 w-4 text-gray-400" />
+              <ChevronDown className="w-4 h-4 text-gray-400" />
             </button>
 
             {/* User dropdown menu */}
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+              <div className="absolute right-0 z-50 w-56 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg">
                 <div className="p-4 border-b border-gray-200">
                   <p className="text-sm font-medium text-gray-900">
                     {user?.firstName} {user?.lastName}
                   </p>
                   <p className="text-sm text-gray-500">{user?.email}</p>
-                  <p className="text-xs text-gray-400 mt-1 capitalize">
+                  <p className="mt-1 text-xs text-gray-400 capitalize">
                     {user?.role.toLowerCase()} • {user?.department}
                   </p>
                 </div>
@@ -186,29 +186,29 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 <div className="py-2">
                   <Link
                     to="/profile"
-                    className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex items-center px-4 py-2 space-x-3 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setShowUserMenu(false)}
                   >
-                    <User className="h-4 w-4" />
+                    <User className="w-4 h-4" />
                     <span>Profile</span>
                   </Link>
                   
                   <Link
                     to="/settings"
-                    className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex items-center px-4 py-2 space-x-3 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setShowUserMenu(false)}
                   >
-                    <Settings className="h-4 w-4" />
+                    <Settings className="w-4 h-4" />
                     <span>Settings</span>
                   </Link>
                 </div>
                 
-                <div className="border-t border-gray-200 py-2">
+                <div className="py-2 border-t border-gray-200">
                   <button
                     onClick={handleLogout}
-                    className="flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                    className="flex items-center w-full px-4 py-2 space-x-3 text-sm text-left text-red-600 hover:bg-red-50"
                   >
-                    <LogOut className="h-4 w-4" />
+                    <LogOut className="w-4 h-4" />
                     <span>Sign out</span>
                   </button>
                 </div>
