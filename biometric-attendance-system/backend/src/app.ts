@@ -180,13 +180,36 @@ process.on("SIGINT", async () => {
 });
 
 // Start server
-const PORT = config.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 console.log('About to start server on port:', PORT);
 console.log('Environment PORT:', process.env.PORT);
 
+// Add error handling for the server
+server.on('error', (error) => {
+  console.error('Server error:', error);
+  process.exit(1);
+});
+
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server successfully started on ${PORT}`);
+  console.log('Server address:', server.address());
   logger.info(`🚀 Server running on port ${PORT}`);
+  
+  // Keep-alive check
+  setInterval(() => {
+    console.log('Server still running...');
+  }, 30000); // Log every 30 seconds
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
 });
 
 export default app;
