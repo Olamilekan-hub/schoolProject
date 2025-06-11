@@ -1,4 +1,4 @@
-// src/services/api/attendance.ts - Frontend Attendance Service
+// src/services/attendance.ts - Frontend Attendance Service
 import axios from 'axios'
 import type { 
   AttendanceSession, 
@@ -14,7 +14,7 @@ const attendanceService = {
   // Session Management
   getSessions: async (): Promise<AttendanceSession[]> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.get(`${API_URL}/api/attendance/sessions`, {
+    const response = await axios.get(`${API_URL}/attendance/sessions`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -22,20 +22,20 @@ const attendanceService = {
 
   getSession: async (id: string): Promise<AttendanceSession> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.get(`${API_URL}/api/attendance/sessions/${id}`, {
+    const response = await axios.get(`${API_URL}/attendance/sessions/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
   },
 
   getSessionByToken: async (token: string): Promise<AttendanceSession> => {
-    const response = await axios.get(`${API_URL}/api/attendance/sessions/by-token/${token}`)
+    const response = await axios.get(`${API_URL}/attendance/sessions/by-token/${token}`)
     return response.data.data
   },
 
   createSession: async (data: CreateAttendanceSessionData): Promise<AttendanceSession> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.post(`${API_URL}/api/attendance/sessions`, data, {
+    const response = await axios.post(`${API_URL}/attendance/sessions`, data, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -43,7 +43,7 @@ const attendanceService = {
 
   updateSession: async (id: string, data: Partial<CreateAttendanceSessionData>): Promise<AttendanceSession> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.put(`${API_URL}/api/attendance/sessions/${id}`, data, {
+    const response = await axios.put(`${API_URL}/attendance/sessions/${id}`, data, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -51,7 +51,7 @@ const attendanceService = {
 
   updateSessionStatus: async (sessionId: string, status: 'OPEN' | 'CLOSED' | 'CANCELLED'): Promise<AttendanceSession> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.patch(`${API_URL}/api/attendance/sessions/${sessionId}/status`, 
+    const response = await axios.patch(`${API_URL}/attendance/sessions/${sessionId}/status`, 
       { status }, 
       { headers: { Authorization: `Bearer ${token}` } }
     )
@@ -60,7 +60,7 @@ const attendanceService = {
 
   deleteSession: async (id: string): Promise<void> => {
     const token = localStorage.getItem('accessToken')
-    await axios.delete(`${API_URL}/api/attendance/sessions/${id}`, {
+    await axios.delete(`${API_URL}/attendance/sessions/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   },
@@ -68,7 +68,7 @@ const attendanceService = {
   // Attendance Records
   getSessionRecords: async (sessionId: string): Promise<AttendanceRecord[]> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.get(`${API_URL}/api/attendance/sessions/${sessionId}/records`, {
+    const response = await axios.get(`${API_URL}/attendance/sessions/${sessionId}/records`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -90,7 +90,7 @@ const attendanceService = {
       })
     }
     
-    const response = await axios.get(`${API_URL}/api/attendance/records?${params}`, {
+    const response = await axios.get(`${API_URL}/attendance/records?${params}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -99,20 +99,20 @@ const attendanceService = {
   // Mark Attendance
   markAttendance: async (data: MarkAttendanceData): Promise<AttendanceMarkingResult> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.post(`${API_URL}/api/attendance/mark`, data, {
+    const response = await axios.post(`${API_URL}/attendance/mark`, data, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
   },
 
   markAttendanceByLink: async (token: string, data: Omit<MarkAttendanceData, 'sessionId'>): Promise<AttendanceMarkingResult> => {
-    const response = await axios.post(`${API_URL}/api/attendance/mark-by-link/${token}`, data)
+    const response = await axios.post(`${API_URL}/attendance/mark-by-link/${token}`, data)
     return response.data.data
   },
 
   markBulkAttendance: async (sessionId: string, studentIds: string[]): Promise<AttendanceMarkingResult[]> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.post(`${API_URL}/api/attendance/mark-bulk`, {
+    const response = await axios.post(`${API_URL}/attendance/mark-bulk`, {
       sessionId,
       studentIds
     }, {
@@ -126,7 +126,7 @@ const attendanceService = {
     remarks?: string
   }): Promise<AttendanceRecord> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.patch(`${API_URL}/api/attendance/records/${id}`, data, {
+    const response = await axios.patch(`${API_URL}/attendance/records/${id}`, data, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -134,7 +134,7 @@ const attendanceService = {
 
   deleteAttendanceRecord: async (id: string): Promise<void> => {
     const token = localStorage.getItem('accessToken')
-    await axios.delete(`${API_URL}/api/attendance/records/${id}`, {
+    await axios.delete(`${API_URL}/attendance/records/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   },
@@ -146,7 +146,7 @@ const attendanceService = {
     expiresAt: string
   }> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.post(`${API_URL}/api/attendance/sessions/${sessionId}/generate-link`, {
+    const response = await axios.post(`${API_URL}/attendance/sessions/${sessionId}/generate-link`, {
       expiresInHours
     }, {
       headers: { Authorization: `Bearer ${token}` }
@@ -159,13 +159,13 @@ const attendanceService = {
     isValid: boolean
     expiresAt: string
   }> => {
-    const response = await axios.get(`${API_URL}/api/attendance/link-info/${token}`)
+    const response = await axios.get(`${API_URL}/attendance/link-info/${token}`)
     return response.data.data
   },
 
   disableAttendanceLink: async (sessionId: string): Promise<void> => {
     const token = localStorage.getItem('accessToken')
-    await axios.delete(`${API_URL}/api/attendance/sessions/${sessionId}/link`, {
+    await axios.delete(`${API_URL}/attendance/sessions/${sessionId}/link`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   },
@@ -200,7 +200,7 @@ const attendanceService = {
       })
     }
     
-    const response = await axios.get(`${API_URL}/api/attendance/stats?${params}`, {
+    const response = await axios.get(`${API_URL}/attendance/stats?${params}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -213,7 +213,7 @@ const attendanceService = {
     rate: number
   }>> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.get(`${API_URL}/api/attendance/trend?days=${days}`, {
+    const response = await axios.get(`${API_URL}/attendance/trend?days=${days}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -222,7 +222,7 @@ const attendanceService = {
   // Export Functions
   exportAttendanceReport: async (sessionId: string, format: 'PDF' | 'EXCEL' | 'CSV' = 'EXCEL'): Promise<Blob> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.get(`${API_URL}/api/attendance/sessions/${sessionId}/export?format=${format}`, {
+    const response = await axios.get(`${API_URL}/attendance/sessions/${sessionId}/export?format=${format}`, {
       headers: { Authorization: `Bearer ${token}` },
       responseType: 'blob'
     })
@@ -242,7 +242,7 @@ const attendanceService = {
       if (value) params.append(key, value)
     })
     
-    const response = await axios.get(`${API_URL}/api/attendance/export?${params}`, {
+    const response = await axios.get(`${API_URL}/attendance/export?${params}`, {
       headers: { Authorization: `Bearer ${token}` },
       responseType: 'blob'
     })
@@ -256,7 +256,7 @@ const attendanceService = {
     timeRemaining?: number
   }> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.get(`${API_URL}/api/attendance/sessions/${sessionId}/validate-time`, {
+    const response = await axios.get(`${API_URL}/attendance/sessions/${sessionId}/validate-time`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -280,7 +280,7 @@ const attendanceService = {
     const params = new URLSearchParams()
     if (courseId) params.append('courseId', courseId)
     
-    const response = await axios.get(`${API_URL}/api/attendance/students/${studentId}/history?${params}`, {
+    const response = await axios.get(`${API_URL}/attendance/students/${studentId}/history?${params}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data

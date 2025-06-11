@@ -1,4 +1,4 @@
-// src/services/api/reports.ts
+// src/services/reports.ts
 import axios from 'axios'
 import type { AttendanceReport, ExportOptions } from '../types/reports'
 
@@ -19,7 +19,7 @@ const reportsService = {
       if (value) params.append(key, value)
     })
     
-    const response = await axios.get(`${API_URL}/api/reports/attendance?${params}`, {
+    const response = await axios.get(`${API_URL}/reports/attendance?${params}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     
@@ -64,7 +64,7 @@ const reportsService = {
 
   exportReport: async (options: ExportOptions): Promise<Blob> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.post(`${API_URL}/api/reports/export`, options, {
+    const response = await axios.post(`${API_URL}/reports/export`, options, {
       headers: { Authorization: `Bearer ${token}` },
       responseType: 'blob'
     })
