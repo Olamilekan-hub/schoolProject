@@ -181,10 +181,12 @@ process.on("SIGINT", async () => {
 
 // Start server
 const PORT = config.PORT || 5000;
+console.log('About to start server on port:', PORT);
+console.log('Environment PORT:', process.env.PORT);
+
 server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server successfully started on ${PORT}`);
   logger.info(`🚀 Server running on port ${PORT}`);
-  logger.info(`📊 Environment: ${config.NODE_ENV}`);
-  logger.info(`🔒 CORS Origin: ${config.CORS_ORIGIN}`);
 });
 
 export default app;
