@@ -63,7 +63,11 @@ router.get("/", authenticate, async (req, res) => {
         },
         studentCourses: {
           include: {
-            student: true,
+            student: {
+              include: {
+                biometricTemplates: true,
+              },
+            },
           },
         },
         attendanceSessions: {
@@ -116,7 +120,11 @@ router.get("/:id", authenticate, async (req, res) => {
       include: {
         studentCourses: {
           include: {
-            student: true,
+            student: {
+              include: {
+                biometricTemplates: true,
+              },
+            },
           },
         },
         attendanceSessions: {
@@ -147,12 +155,12 @@ router.get("/:id", authenticate, async (req, res) => {
             (totalAttendanceRecords / (totalSessions * totalStudents)) * 100
           )
         : 0;
-    // Defensive: check for biometricEnrolled property using Object.prototype.hasOwnProperty
     const activeStudents = course.studentCourses.filter(
       (sc) => sc.student && sc.student.status === "ACTIVE"
     ).length;
+    // Compute biometricEnrolled by checking biometricTemplates
     const biometricEnrolled = course.studentCourses.filter(
-      (sc) => sc.student && Object.prototype.hasOwnProperty.call(sc.student, 'biometricEnrolled') && sc.student.biometricEnrolled === true
+      (sc) => sc.student && sc.student.biometricTemplates && sc.student.biometricTemplates.length > 0
     ).length;
 
     res.json({
@@ -423,10 +431,14 @@ router.get("/:id/stats", authenticate, async (req, res) => {
           courseId: req.params.id,
         },
         include: {
-          student: true,
+          student: {
+            include: {
+              biometricTemplates: true,
+            },
+          },
         },
       }).then((studentCourses) => studentCourses.filter(
-        (sc) => sc.student && sc.student.biometricEnrolled
+        (sc) => sc.student && sc.student.biometricTemplates && sc.student.biometricTemplates.length > 0
       ).length),
       prisma.attendanceSession.count({
         where: {
