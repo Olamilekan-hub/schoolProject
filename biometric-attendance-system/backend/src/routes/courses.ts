@@ -115,57 +115,21 @@ router.get("/", authenticate, async (req, res) => {
 // Get single course
 router.get("/:id", authenticate, async (req, res) => {
   try {
+    // Fetch course with relations
     const course = await prisma.course.findFirst({
       where: {
         id: req.params.id,
         teacherId: req.user!.id,
       },
       include: {
-        teacher: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-            department: true,
-          },
-        },
         studentCourses: {
           include: {
-            student: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                matricNumber: true,
-                email: true,
-                status: true,
-                biometricEnrolled: true,
-                level: true,
-                department: true,
-              },
-            },
-          },
-          where: {
-            status: "ENROLLED",
+            student: true,
           },
         },
         attendanceSessions: {
-          select: {
-            id: true,
-            sessionName: true,
-            sessionDate: true,
-            startTime: true,
-            endTime: true,
-            status: true,
-            attendanceRecords: {
-              select: {
-                id: true,
-                status: true,
-              },
-            },
-          },
-          orderBy: {
-            sessionDate: "desc",
+          include: {
+            attendanceRecords: true,
           },
         },
       },
@@ -191,6 +155,12 @@ router.get("/:id", authenticate, async (req, res) => {
             (totalAttendanceRecords / (totalSessions * totalStudents)) * 100
           )
         : 0;
+    const activeStudents = course.studentCourses.filter(
+      (sc) => sc.student.status === "ACTIVE"
+    ).length;
+    const biometricEnrolled = course.studentCourses.filter(
+      (sc) => sc.student.biometricEnrolled
+    ).length;
 
     res.json({
       success: true,
@@ -201,12 +171,8 @@ router.get("/:id", authenticate, async (req, res) => {
           totalSessions,
           totalAttendanceRecords,
           averageAttendance,
-          activeStudents: course.studentCourses.filter(
-            (sc) => sc.student.status === "ACTIVE"
-          ).length,
-          biometricEnrolled: course.studentCourses.filter(
-            (sc) => sc.student.biometricEnrolled
-          ).length,
+          activeStudents,
+          biometricEnrolled,
         },
       },
     });
