@@ -70,6 +70,7 @@ router.get("/", authenticate, async (req, res) => {
                 lastName: true,
                 matricNumber: true,
                 status: true,
+                biometricEnrolled: true,
               },
             },
           },
@@ -124,7 +125,16 @@ router.get("/:id", authenticate, async (req, res) => {
       include: {
         studentCourses: {
           include: {
-            student: true,
+            student: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                matricNumber: true,
+                status: true,
+                biometricEnrolled: true,
+              },
+            },
           },
         },
         attendanceSessions: {
@@ -309,6 +319,8 @@ router.put("/:id", authenticate, async (req, res) => {
                 firstName: true,
                 lastName: true,
                 matricNumber: true,
+                status: true,
+                biometricEnrolled: true,
               },
             },
           },
@@ -343,7 +355,20 @@ router.delete("/:id", authenticate, async (req, res) => {
       },
       include: {
         attendanceSessions: true,
-        studentCourses: true,
+        studentCourses: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                matricNumber: true,
+                status: true,
+                biometricEnrolled: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -434,7 +459,11 @@ router.get("/:id/stats", authenticate, async (req, res) => {
           courseId: req.params.id,
         },
         include: {
-          student: true,
+          student: {
+            select: {
+              biometricEnrolled: true,
+            },
+          },
         },
       }).then((studentCourses) => studentCourses.filter(
         (sc) => sc.student && sc.student.biometricEnrolled
