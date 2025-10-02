@@ -1,6 +1,7 @@
 // src/routes/auth.ts - Authentication Routes
 import express from "express";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { prisma } from "../config/database";
 import { config } from "../config/env";
 import { authenticate } from "../middleware/auth";
@@ -88,7 +89,11 @@ router.post("/register", validateRegister, async (req, res) => {
     });
 
     // Generate tokens
-    const { accessToken, refreshToken } = generateTokens(result.id);
+    const { accessToken, refreshToken } = generateTokenPair({
+      userId: result.id,
+      email: result.email,
+      role: result.role,
+    });
 
     // Return user without password
     const { passwordHash: _, ...userWithoutPassword } = result;
@@ -141,7 +146,11 @@ router.post("/login", validateLogin, async (req, res) => {
     }
 
     // Generate tokens
-    const { accessToken, refreshToken } = generateTokens(user.id);
+    const { accessToken, refreshToken } = generateTokenPair({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
 
     // Return user without password
     const { passwordHash, ...userWithoutPassword } = user;
@@ -223,7 +232,11 @@ router.post("/refresh", async (req, res) => {
       });
     }
 
-    const tokens = generateTokens(user.id);
+    const tokens = generateTokenPair({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
     const { passwordHash, ...userWithoutPassword } = user;
 
     res.json({

@@ -6,6 +6,7 @@ import { logger } from "../utils/logger";
 import {
   generatePDFReport,
   generateExcelReport,
+  generateCSVReport
 } from "../utils/reportGenerator";
 import { subDays, startOfDay, endOfDay, format } from "date-fns";
 
@@ -136,7 +137,7 @@ router.get("/attendance", authenticate, async (req, res) => {
       return {
         sessionId: session.id,
         sessionName: session.sessionName,
-        sessionDate: session.sessionDate,
+        sessionDate: typeof session.sessionDate === 'string' ? session.sessionDate : session.sessionDate.toISOString(),
         courseCode: session.course.courseCode,
         courseTitle: session.course.courseTitle,
         presentCount,

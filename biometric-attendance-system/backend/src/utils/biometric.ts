@@ -32,7 +32,7 @@ interface BiometricTemplate {
 export const encryptBiometric = (data: string): string => {
   try {
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipherGCM(ALGORITHM, KEY, iv);
+    const cipher = crypto.createCipheriv(ALGORITHM, KEY, iv);
 
     let encrypted = cipher.update(data, "utf8", "hex");
     encrypted += cipher.final("hex");
@@ -57,7 +57,7 @@ export const decryptBiometric = (encryptedData: string): string => {
     const authTag = Buffer.from(parts[1], "hex");
     const encrypted = parts[2];
 
-    const decipher = crypto.createDecipherGCM(ALGORITHM, KEY, iv);
+    const decipher = crypto.createDecipheriv(ALGORITHM, KEY, iv);
     decipher.setAuthTag(authTag);
 
     let decrypted = decipher.update(encrypted, "hex", "utf8");
