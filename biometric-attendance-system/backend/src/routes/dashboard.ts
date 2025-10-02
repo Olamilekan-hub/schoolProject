@@ -6,25 +6,27 @@ import { logger } from "../utils/logger";
 import { subDays, startOfDay, endOfDay } from "date-fns";
 
 // Ensure @types/express is installed and imported correctly
-import { Request } from "express";
-declare module "express-serve-static-core" {
-  interface Request {
-    user?: {
-      id: string;
-      email: string;
-      role: string;
-      firstName: string;
-      lastName: string;
-    };
-  }
-}
+// Fix: Remove or comment out any module augmentation for 'express-serve-static-core' if present
+// import { Request } from "express";
+// declare module "express-serve-static-core" {
+//   interface Request {
+//     user?: {
+//       id: string;
+//       email: string;
+//       role: string;
+//       firstName: string;
+//       lastName: string;
+//     };
+//   }
+// }
 
 const router = express.Router();
 
 // Get dashboard data
 router.get("/", authenticate, async (req, res) => {
   try {
-    const teacherId = req.user!.id;
+    // Fix: Use (req as any).user to access user property on request
+    const teacherId = (req as any).user!.id;
 
     // Get basic statistics
     const [

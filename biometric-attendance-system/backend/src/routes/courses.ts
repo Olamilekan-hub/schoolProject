@@ -37,7 +37,7 @@ router.get("/", authenticate, async (req, res) => {
     const { search, semester, academicYear, isActive } = req.query;
 
     const where: any = {
-      teacherId: req.user!.id,
+      teacherId: (req as any).user.id,
     };
 
     if (search) {
@@ -119,7 +119,7 @@ router.get("/:id", authenticate, async (req, res) => {
     const course = await prisma.course.findFirst({
       where: {
         id: req.params.id,
-        teacherId: req.user!.id,
+        teacherId: (req as any).user.id,
       },
       include: {
         studentCourses: {
@@ -155,12 +155,12 @@ router.get("/:id", authenticate, async (req, res) => {
             (totalAttendanceRecords / (totalSessions * totalStudents)) * 100
           )
         : 0;
-    // Defensive: check for biometricEnrolled property on student object
+    // Defensive: check for biometricEnrolled property using Object.prototype.hasOwnProperty
     const activeStudents = course.studentCourses.filter(
       (sc) => sc.student && sc.student.status === "ACTIVE"
     ).length;
     const biometricEnrolled = course.studentCourses.filter(
-      (sc) => sc.student && 'biometricEnrolled' in sc.student && sc.student.biometricEnrolled === true
+      (sc) => sc.student && Object.prototype.hasOwnProperty.call(sc.student, 'biometricEnrolled') && sc.student.biometricEnrolled === true
     ).length;
 
     res.json({
@@ -201,7 +201,7 @@ router.post("/", authenticate, async (req, res) => {
     const existingCourse = await prisma.course.findFirst({
       where: {
         courseCode: value.courseCode,
-        teacherId: req.user!.id,
+        teacherId: (req as any).user.id,
       },
     });
 
@@ -215,7 +215,7 @@ router.post("/", authenticate, async (req, res) => {
     const course = await prisma.course.create({
       data: {
         ...value,
-        teacherId: req.user!.id,
+        teacherId: (req as any).user.id,
       },
       include: {
         teacher: {
@@ -229,7 +229,7 @@ router.post("/", authenticate, async (req, res) => {
     });
 
     logger.info(
-      `New course created: ${course.courseCode} by ${req.user!.email}`
+      `New course created: ${course.courseCode} by ${(req as any).user.email}`
     );
 
     res.status(201).json({
@@ -261,7 +261,7 @@ router.put("/:id", authenticate, async (req, res) => {
     const existingCourse = await prisma.course.findFirst({
       where: {
         id: req.params.id,
-        teacherId: req.user!.id,
+        teacherId: (req as any).user.id,
       },
     });
 
@@ -277,7 +277,7 @@ router.put("/:id", authenticate, async (req, res) => {
       const conflictingCourse = await prisma.course.findFirst({
         where: {
           courseCode: value.courseCode,
-          teacherId: req.user!.id,
+          teacherId: (req as any).user.id,
           id: { not: req.params.id },
         },
       });
@@ -316,7 +316,7 @@ router.put("/:id", authenticate, async (req, res) => {
       },
     });
 
-    logger.info(`Course updated: ${course.courseCode} by ${req.user!.email}`);
+    logger.info(`Course updated: ${course.courseCode} by ${(req as any).user.email}`);
 
     res.json({
       success: true,
@@ -339,7 +339,7 @@ router.delete("/:id", authenticate, async (req, res) => {
     const course = await prisma.course.findFirst({
       where: {
         id: req.params.id,
-        teacherId: req.user!.id,
+        teacherId: (req as any).user.id,
       },
       include: {
         attendanceSessions: true,
@@ -368,7 +368,7 @@ router.delete("/:id", authenticate, async (req, res) => {
       where: { id: req.params.id },
     });
 
-    logger.info(`Course deleted: ${course.courseCode} by ${req.user!.email}`);
+    logger.info(`Course deleted: ${course.courseCode} by ${(req as any).user.email}`);
 
     res.json({
       success: true,
@@ -391,7 +391,7 @@ router.get("/:id/stats", authenticate, async (req, res) => {
     const course = await prisma.course.findFirst({
       where: {
         id: req.params.id,
-        teacherId: req.user!.id,
+        teacherId: (req as any).user.id,
       },
     });
 
@@ -546,7 +546,7 @@ router.post("/:id/enroll", authenticate, async (req, res) => {
     const course = await prisma.course.findFirst({
       where: {
         id: req.params.id,
-        teacherId: req.user!.id,
+        teacherId: (req as any).user.id,
       },
     });
 
@@ -615,7 +615,7 @@ router.delete("/:id/students/:studentId", authenticate, async (req, res) => {
     const course = await prisma.course.findFirst({
       where: {
         id: courseId,
-        teacherId: req.user!.id,
+        teacherId: (req as any).user.id,
       },
     });
 
