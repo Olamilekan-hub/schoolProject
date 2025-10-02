@@ -5,11 +5,11 @@
   "main": "dist/app.js",
   "scripts": {
     "dev": "tsx watch src/app.ts",
-    "build": "echo 'Build skipped - no type checking' && exit 0",
+    "build": "tsc",
     "build:compile": "tsc --noEmitOnError false --skipLibCheck",
     "build:force": "tsc --noEmitOnError false --skipLibCheck --allowJs",
     "type-check": "tsc --noEmit",
-    "start": "tsx src/app.ts",
+    "start": "node dist/app.js",
     "start:prod": "NODE_ENV=production tsx src/app.ts",
     "lint": "eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
