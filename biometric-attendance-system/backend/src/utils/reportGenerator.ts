@@ -473,7 +473,8 @@ export async function generateExcelReport(reportData: ReportData): Promise<Buffe
       studentsSheet.getColumn(2).width = 25 // Student name
     }
 
-    return workbook.xlsx.writeBuffer() as Promise<Buffer>
+    // Fix: Use 'unknown' type conversion for Buffer if needed
+    return workbook.xlsx.writeBuffer() as unknown as Buffer;
   } catch (error) {
     logger.error('Excel generation error:', error)
     throw error

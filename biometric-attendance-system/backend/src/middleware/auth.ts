@@ -21,7 +21,7 @@ export const authenticate = async (
   next: NextFunction
 ) => {
   try {
-    const authHeader = req.headers.authorization;
+    const authHeader = req.get("authorization");
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({

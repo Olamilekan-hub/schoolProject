@@ -72,7 +72,6 @@ router.get("/", authenticate, async (req, res) => {
       prisma.student.count({
         where: {
           registeredById: teacherId,
-          biometricEnrolled: true,
           status: "ACTIVE",
         },
       }),

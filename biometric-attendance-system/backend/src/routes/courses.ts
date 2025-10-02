@@ -158,8 +158,9 @@ router.get("/:id", authenticate, async (req, res) => {
     const activeStudents = course.studentCourses.filter(
       (sc) => sc.student.status === "ACTIVE"
     ).length;
+    // Defensive: check if biometricEnrolled exists before accessing
     const biometricEnrolled = course.studentCourses.filter(
-      (sc) => sc.student.biometricEnrolled
+      (sc) => sc.student && typeof sc.student.biometricEnrolled !== 'undefined' && sc.student.biometricEnrolled
     ).length;
 
     res.json({
@@ -428,12 +429,16 @@ router.get("/:id/stats", authenticate, async (req, res) => {
           student: { status: "ACTIVE" },
         },
       }),
-      prisma.studentCourse.count({
+      prisma.studentCourse.findMany({
         where: {
           courseId: req.params.id,
-          student: { biometricEnrolled: true },
         },
-      }),
+        include: {
+          student: true,
+        },
+      }).then((studentCourses) => studentCourses.filter(
+        (sc) => sc.student && sc.student.biometricEnrolled
+      ).length),
       prisma.attendanceSession.count({
         where: {
           courseId: req.params.id,
