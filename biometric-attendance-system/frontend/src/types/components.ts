@@ -27,6 +27,9 @@ export interface InputProps {
   autoFocus?: boolean
   onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void
   maxLength?: number
+  min?: string | number
+  max?: string | number
+  step?: string | number
 }
 
 export interface SelectProps {
@@ -131,5 +134,5 @@ export interface QRCodeGeneratorProps {
   className?: string
 }
 
-// Define BiometricType if not imported from elsewhere
-export type BiometricType = 'fingerprint' | 'face' | 'iris' | 'voice';
+// Define BiometricType to match backend enum
+export type BiometricType = 'FINGERPRINT' | 'FACE';

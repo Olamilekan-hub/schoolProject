@@ -9,6 +9,7 @@ export interface User {
   employeeId?: string
   isActive: boolean
   role: UserRole
+  courses?: string[]
   createdAt: string
   updatedAt: string
 }

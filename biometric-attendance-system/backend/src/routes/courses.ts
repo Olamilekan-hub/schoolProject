@@ -687,4 +687,122 @@ router.delete("/:id/students/:studentId", authenticate, async (req, res) => {
   }
 });
 
+// Get all courses for dropdown selection (used in registration)
+router.get("/all", async (req, res) => {
+  try {
+    const courses = await prisma.course.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        courseCode: true,
+        courseTitle: true,
+        creditUnits: true,
+        semester: true,
+        teacher: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: {
+        courseCode: "asc",
+      },
+    });
+
+    const formattedCourses = courses.map((course) => ({
+      id: course.id,
+      value: course.id,
+      label: `${course.courseCode} - ${course.courseTitle}`,
+      courseCode: course.courseCode,
+      courseTitle: course.courseTitle,
+      creditUnits: course.creditUnits,
+      semester: course.semester,
+      teacher: `${course.teacher.firstName} ${course.teacher.lastName}`,
+    }));
+
+    res.json({
+      success: true,
+      data: formattedCourses,
+    });
+  } catch (error) {
+    logger.error("Get all courses error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch courses",
+    });
+  }
+});
+
+// Create new course (public endpoint for registration)
+router.post("/create", async (req, res) => {
+  try {
+    const { error, value } = createCourseSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+      });
+    }
+
+    // Check if course code already exists
+    const existingCourse = await prisma.course.findUnique({
+      where: {
+        courseCode: value.courseCode,
+      },
+    });
+
+    if (existingCourse) {
+      return res.status(400).json({
+        success: false,
+        message: "Course with this code already exists",
+      });
+    }
+
+    // Create course without teacher assignment (will be assigned during registration)
+    const course = await prisma.course.create({
+      data: {
+        courseCode: value.courseCode,
+        courseTitle: value.courseTitle,
+        description: value.description,
+        creditUnits: value.creditUnits,
+        semester: value.semester,
+        academicYear: value.academicYear,
+        teacherId: "temp-id", // Will be updated when teacher registers
+      },
+      select: {
+        id: true,
+        courseCode: true,
+        courseTitle: true,
+        creditUnits: true,
+        semester: true,
+      },
+    });
+
+    logger.info(`Course created: ${course.courseCode}`);
+
+    res.status(201).json({
+      success: true,
+      message: "Course created successfully",
+      data: {
+        id: course.id,
+        value: course.id,
+        label: `${course.courseCode} - ${course.courseTitle}`,
+        courseCode: course.courseCode,
+        courseTitle: course.courseTitle,
+        creditUnits: course.creditUnits,
+        semester: course.semester,
+      },
+    });
+  } catch (error) {
+    logger.error("Create course error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create course",
+    });
+  }
+});
+
 export default router;

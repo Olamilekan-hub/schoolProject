@@ -20,13 +20,14 @@ export interface AttendanceReport {
   totalStudents?: number
   totalRecords?: number
   averageAttendance?: number
-  attendanceTrend?: [
-    {
+  attendanceTrend?: Array<{
       date: string,
       attendance: number
-    }, any
-  ]
-  courseComparison?: [any]
+    }>
+  courseComparison?: Array<{
+    courseCode: string,
+    percentage: number
+  }>
   studentDetails?: StudentAttendanceSummary[]
   sessionDetails?: AttendanceSessionSummary[]
   totalAttendance?: number

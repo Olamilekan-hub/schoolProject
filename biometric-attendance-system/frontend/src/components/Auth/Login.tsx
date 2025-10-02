@@ -17,6 +17,8 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 })
 
+type LoginFormData = z.infer<typeof loginSchema>
+
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const { login, isAuthenticated, isLoading } = useAuth()
@@ -29,7 +31,7 @@ const Login: React.FC = () => {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginCredentials>({
+  } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   })
 
@@ -39,8 +41,8 @@ const Login: React.FC = () => {
     }
   }, [isAuthenticated, navigate, from])
 
-  const onSubmit = async (data: LoginCredentials) => {
-    const response = await login(data)
+  const onSubmit = async (data: LoginFormData) => {
+    const response = await login(data as LoginCredentials)
     if (response.success) {
       navigate(from, { replace: true })
     }

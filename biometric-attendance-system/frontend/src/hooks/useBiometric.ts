@@ -105,7 +105,12 @@ export const useBiometric = (): UseBiometricReturn => {
     try {
       // Generate a random challenge
       const challenge = new Uint8Array(32)
-      crypto.getRandomValues(challenge)
+      // Ensure crypto.getRandomValues is only called in browser
+      if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+        window.crypto.getRandomValues(challenge)
+      } else {
+        throw new Error('crypto.getRandomValues is not available in this environment')
+      }
 
       // User ID as bytes
       const userIdBytes = new TextEncoder().encode(userId)
@@ -200,7 +205,11 @@ export const useBiometric = (): UseBiometricReturn => {
     try {
       // Generate challenge
       const challenge = new Uint8Array(32)
-      crypto.getRandomValues(challenge)
+      if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+        window.crypto.getRandomValues(challenge)
+      } else {
+        throw new Error('crypto.getRandomValues is not available in this environment')
+      }
 
       const publicKeyCredentialRequestOptions: PublicKeyCredentialRequestOptions = {
         challenge,

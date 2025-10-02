@@ -1,27 +1,20 @@
 // src/routes/auth.ts - Authentication Routes
 import express from "express";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { prisma } from "../config/database";
 import { config } from "../config/env";
 import { authenticate } from "../middleware/auth";
 import { validateRegister, validateLogin } from "../middleware/validation";
 import { logger } from "../utils/logger";
+import {
+  generateTokenPair,
+  verifyRefreshToken,
+  refreshAccessToken,
+  revokeSession,
+  revokeUserSessions,
+} from "../utils/session";
 
 const router = express.Router();
-
-// Generate JWT tokens
-const generateTokens = (userId: string) => {
-  const accessToken = jwt.sign({ userId }, config.JWT_SECRET, {
-    expiresIn: config.JWT_EXPIRES_IN,
-  });
-
-  const refreshToken = jwt.sign({ userId }, config.JWT_REFRESH_SECRET, {
-    expiresIn: config.JWT_REFRESH_EXPIRES_IN,
-  });
-
-  return { accessToken, refreshToken };
-};
 
 // Register teacher
 router.post("/register", validateRegister, async (req, res) => {
@@ -79,18 +72,16 @@ router.post("/register", validateRegister, async (req, res) => {
 
       // Create courses if provided
       if (courses && courses.length > 0) {
-        const courseData = courses.map((courseTitle: string) => {
-          const [courseCode, ...titleParts] = courseTitle.split(" - ");
-          return {
-            courseCode: courseCode.trim(),
-            courseTitle: titleParts.join(" - ").trim() || courseTitle,
-            teacherId: user.id,
-          };
-        });
-
-        await tx.course.createMany({
-          data: courseData,
-        });
+        // Link teacher to selected courses (courses is now array of course IDs)
+        if (courses && courses.length > 0) {
+          for (const courseId of courses) {
+            // Update course to assign this teacher
+            await tx.course.update({
+              where: { id: courseId },
+              data: { teacherId: user.id },
+            });
+          }
+        }
       }
 
       return user;

@@ -58,16 +58,12 @@ export default defineConfig({
     port: 3000,
     host: true,
     // Enable HTTPS for biometric features (WebAuthn requires HTTPS)
-    https: (() => {
-      const certs = createSelfSignedCert()
-      if (certs) {
-        return {
-          key: fs.readFileSync(certs.key),
-          cert: fs.readFileSync(certs.cert),
-        }
+    ...(createSelfSignedCert() ? {
+      https: {
+        key: fs.readFileSync(path.resolve(__dirname, 'certs/key.pem')),
+        cert: fs.readFileSync(path.resolve(__dirname, 'certs/cert.pem')),
       }
-      return false
-    })(),
+    } : {}),
     // Proxy API requests to backend
     proxy: {
       '/api': {

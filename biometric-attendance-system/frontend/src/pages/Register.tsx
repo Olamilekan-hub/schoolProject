@@ -4,13 +4,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, UserPlus, Fingerprint, Plus, X } from "lucide-react";
+import { Eye, EyeOff, UserPlus, Fingerprint } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/UI/Button";
 import Input from "../components/UI/Input";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
+import MultiSelect from "../components/UI/MultiSelect";
+import AddCourseModal from "../components/Courses/AddCourseModal";
+import { coursesService } from "../services/courses";
 import type { RegisterData } from "../types/auth";
+import type { Option } from "../components/UI/MultiSelect";
 
 const registerSchema = z
   .object({
@@ -29,10 +33,15 @@ const registerSchema = z
     path: ["confirmPassword"],
   });
 
+type RegisterFormData = z.infer<typeof registerSchema>;
+
 const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [courses, setCourses] = useState<string[]>([""]);
+  const [availableCourses, setAvailableCourses] = useState<Option[]>([]);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [showAddCourseModal, setShowAddCourseModal] = useState(false);
+  const [loadingCourses, setLoadingCourses] = useState(true);
   const { register: registerUser, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -40,7 +49,7 @@ const Register: React.FC = () => {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterData & { confirmPassword: string }>({
+  } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
 
@@ -50,28 +59,36 @@ const Register: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const addCourse = () => {
-    setCourses([...courses, ""]);
+  // Load available courses
+  useEffect(() => {
+    const loadCourses = async () => {
+      setLoadingCourses(true);
+      try {
+        const courses = await coursesService.getAllCourses();
+        setAvailableCourses(courses);
+      } catch (error) {
+        console.error("Failed to load courses:", error);
+      } finally {
+        setLoadingCourses(false);
+      }
+    };
+
+    loadCourses();
+  }, []);
+
+  const handleAddCourse = (newCourse: Option) => {
+    setAvailableCourses(prev => [...prev, newCourse]);
+    setSelectedCourses(prev => [...prev, newCourse.value]);
+    setShowAddCourseModal(false);
   };
 
-  const removeCourse = (index: number) => {
-    setCourses(courses.filter((_, i) => i !== index));
-  };
-
-  const updateCourse = (index: number, value: string) => {
-    const updatedCourses = [...courses];
-    updatedCourses[index] = value;
-    setCourses(updatedCourses);
-  };
-
-  const onSubmit = async (data: RegisterData & { confirmPassword: string }) => {
+  const onSubmit = async (data: RegisterFormData) => {
     const { confirmPassword, ...registerData } = data;
-    const filteredCourses = courses.filter((course) => course.trim() !== "");
 
     const response = await registerUser({
       ...registerData,
-      courses: filteredCourses,
-    });
+      courses: selectedCourses,
+    } as RegisterData);
 
     if (response.success) {
       navigate("/dashboard", { replace: true });
@@ -211,41 +228,23 @@ const Register: React.FC = () => {
               helperText="Contact your administrator for the registration key"
             />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Courses You'll Teach
-              </label>
-              <div className="space-y-">
-                {courses.map((course, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <input
-                      type="text"
-                      placeholder="e.g., CSC101 - Introduction to Programming"
-                      value={course}
-                      onChange={(e) => updateCourse(index, e.target.value)}
-                      className="flex-1 input"
-                    />
-                    {courses.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeCourse(index)}
-                        className="p-2 text-red-600 hover:text-red-800"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addCourse}
-                  className="flex items-center space-x-2 text-primary-600 hover:text-primary-800"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add another course</span>
-                </button>
+            <MultiSelect
+              label="Courses You'll Teach"
+              placeholder="Select courses you will teach..."
+              options={availableCourses}
+              selectedValues={selectedCourses}
+              onChange={setSelectedCourses}
+              onAddNew={() => setShowAddCourseModal(true)}
+              disabled={loadingCourses}
+              className="mb-4"
+            />
+
+            {loadingCourses && (
+              <div className="flex items-center justify-center py-4">
+                <LoadingSpinner size="sm" />
+                <span className="ml-2 text-sm text-gray-600">Loading courses...</span>
               </div>
-            </div>
+            )}
           </div>
 
           <Button
@@ -274,6 +273,13 @@ const Register: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {/* Add Course Modal */}
+      <AddCourseModal
+        isOpen={showAddCourseModal}
+        onClose={() => setShowAddCourseModal(false)}
+        onCourseAdded={handleAddCourse}
+      />
     </div>
   );
 };

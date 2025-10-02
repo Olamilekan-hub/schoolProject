@@ -46,9 +46,6 @@ model Student {
   level            String    @default("100")
   department       String?
   faculty          String?
-  biometricTemplate String?  @map("biometric_template")
-  biometricEnrolled Boolean  @default(false) @map("biometric_enrolled")
-  biometricEnrolledAt DateTime? @map("biometric_enrolled_at")
   status           StudentStatus @default(ACTIVE)
   registeredById   String    @map("registered_by")
   createdAt        DateTime  @default(now()) @map("created_at")

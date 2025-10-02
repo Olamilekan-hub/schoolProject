@@ -387,7 +387,7 @@ const Attendance: React.FC = () => {
 
   const handleExportSessions = () => {
     // TODO: Implement export functionality
-    toast.info("Export functionality coming soon");
+    toast("Export functionality coming soon");
   };
 
   // Auto-refresh sessions every 30 seconds

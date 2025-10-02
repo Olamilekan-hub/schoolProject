@@ -27,48 +27,37 @@ router.post("/enroll", authenticate, async (req, res) => {
     // Encrypt biometric data
     const encryptedTemplate = encryptBiometric(biometricData);
 
-    // Update student with biometric data
-    const updatedStudent = await prisma.$transaction(async (tx) => {
-      // Update student record
-      const student = await tx.student.update({
-        where: { id: studentId },
-        data: {
-          biometricEnrolled: true,
-          biometricEnrolledAt: new Date(),
-        },
-      });
-
-      // Create or update biometric template
-      await tx.biometricTemplate.upsert({
-        where: {
-          studentId_templateType: {
-            studentId,
-            templateType: "FINGERPRINT",
-          },
-        },
-        update: {
-          templateData: encryptedTemplate,
-          qualityScore,
-          enrollmentDevice: deviceInfo ? deviceInfo : undefined,
-        },
-        create: {
+    // Create or update biometric template
+    const biometricTemplate = await prisma.biometricTemplate.upsert({
+      where: {
+        studentId_templateType: {
           studentId,
-          templateData: encryptedTemplate,
           templateType: "FINGERPRINT",
-          qualityScore,
-          enrollmentDevice: deviceInfo ? JSON.stringify(deviceInfo) : undefined,
         },
-      });
-
-      return student;
+      },
+      update: {
+        templateData: encryptedTemplate,
+        qualityScore,
+        enrollmentDevice: deviceInfo ? JSON.stringify(deviceInfo) : undefined,
+      },
+      create: {
+        studentId,
+        templateData: encryptedTemplate,
+        templateType: "FINGERPRINT",
+        qualityScore,
+        enrollmentDevice: deviceInfo ? JSON.stringify(deviceInfo) : undefined,
+      },
+      include: {
+        student: true,
+      },
     });
 
-    logger.info(`Biometric enrolled for student: ${student.matricNumber}`);
+    logger.info(`Biometric enrolled for student: ${biometricTemplate.student.matricNumber}`);
 
     res.json({
       success: true,
       message: "Biometric enrollment successful",
-      data: updatedStudent,
+      data: biometricTemplate.student,
     });
   } catch (error) {
     logger.error("Biometric enrollment error:", error);
@@ -133,9 +122,14 @@ router.get("/status/:studentId", authenticate, async (req, res) => {
 
     const student = await prisma.student.findUnique({
       where: { id: studentId },
-      select: {
-        biometricEnrolled: true,
-        biometricEnrolledAt: true,
+      include: {
+        biometricTemplates: {
+          select: {
+            templateType: true,
+            createdAt: true,
+            qualityScore: true,
+          },
+        },
       },
     });
 
@@ -146,11 +140,20 @@ router.get("/status/:studentId", authenticate, async (req, res) => {
       });
     }
 
+    const hasFingerprint = student.biometricTemplates.some(
+      (template) => template.templateType === "FINGERPRINT"
+    );
+    const latestEnrollment = student.biometricTemplates.length > 0
+      ? student.biometricTemplates.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+      : null;
+
     res.json({
       success: true,
       data: {
-        enrolled: student.biometricEnrolled,
-        enrolledAt: student.biometricEnrolledAt,
+        enrolled: hasFingerprint,
+        enrolledAt: latestEnrollment?.createdAt,
+        templates: student.biometricTemplates.length,
+        qualityScore: latestEnrollment?.qualityScore,
       },
     });
   } catch (error) {
@@ -167,27 +170,19 @@ router.delete("/:studentId", authenticate, async (req, res) => {
   try {
     const { studentId } = req.params;
 
-    await prisma.$transaction(async (tx) => {
-      // Delete biometric templates
-      await tx.biometricTemplate.deleteMany({
-        where: { studentId },
-      });
-
-      // Update student record
-      await tx.student.update({
-        where: { id: studentId },
-        data: {
-          biometricEnrolled: false,
-          biometricEnrolledAt: null,
-        },
-      });
+    // Delete biometric templates
+    const deletedCount = await prisma.biometricTemplate.deleteMany({
+      where: { studentId },
     });
 
-    logger.info(`Biometric data deleted for student: ${studentId}`);
+    logger.info(`Deleted ${deletedCount.count} biometric templates for student: ${studentId}`);
 
     res.json({
       success: true,
       message: "Biometric data deleted successfully",
+      data: {
+        deletedTemplates: deletedCount.count,
+      },
     });
   } catch (error) {
     logger.error("Delete biometric error:", error);
