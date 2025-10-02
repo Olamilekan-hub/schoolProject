@@ -155,12 +155,12 @@ router.get("/:id", authenticate, async (req, res) => {
             (totalAttendanceRecords / (totalSessions * totalStudents)) * 100
           )
         : 0;
+    // Defensive: check for biometricEnrolled property on student object
     const activeStudents = course.studentCourses.filter(
-      (sc) => sc.student.status === "ACTIVE"
+      (sc) => sc.student && sc.student.status === "ACTIVE"
     ).length;
-    // Defensive: check if biometricEnrolled exists before accessing
     const biometricEnrolled = course.studentCourses.filter(
-      (sc) => sc.student && typeof sc.student.biometricEnrolled !== 'undefined' && sc.student.biometricEnrolled
+      (sc) => sc.student && 'biometricEnrolled' in sc.student && sc.student.biometricEnrolled === true
     ).length;
 
     res.json({

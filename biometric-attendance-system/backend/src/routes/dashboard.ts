@@ -5,7 +5,7 @@ import { authenticate } from "../middleware/auth";
 import { logger } from "../utils/logger";
 import { subDays, startOfDay, endOfDay } from "date-fns";
 
-// Extend Express Request interface to include user property
+// Ensure @types/express is installed and imported correctly
 import { Request } from "express";
 declare module "express-serve-static-core" {
   interface Request {
