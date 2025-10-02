@@ -63,15 +63,7 @@ router.get("/", authenticate, async (req, res) => {
         },
         studentCourses: {
           include: {
-            student: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                matricNumber: true,
-                status: true,
-              },
-            },
+            student: true,
           },
         },
         attendanceSessions: {
@@ -124,15 +116,7 @@ router.get("/:id", authenticate, async (req, res) => {
       include: {
         studentCourses: {
           include: {
-            student: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                matricNumber: true,
-                status: true,
-              },
-            },
+            student: true,
           },
         },
         attendanceSessions: {
@@ -163,12 +147,12 @@ router.get("/:id", authenticate, async (req, res) => {
             (totalAttendanceRecords / (totalSessions * totalStudents)) * 100
           )
         : 0;
-    // Defensive: check for biometricEnrolled property using runtime check
+    // Defensive: check for biometricEnrolled property using Object.prototype.hasOwnProperty
     const activeStudents = course.studentCourses.filter(
       (sc) => sc.student && sc.student.status === "ACTIVE"
     ).length;
     const biometricEnrolled = course.studentCourses.filter(
-      (sc) => sc.student && typeof sc.student.biometricEnrolled !== 'undefined' && sc.student.biometricEnrolled === true
+      (sc) => sc.student && Object.prototype.hasOwnProperty.call(sc.student, 'biometricEnrolled') && sc.student.biometricEnrolled === true
     ).length;
 
     res.json({
@@ -311,15 +295,7 @@ router.put("/:id", authenticate, async (req, res) => {
         },
         studentCourses: {
           include: {
-            student: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                matricNumber: true,
-                status: true,
-              },
-            },
+            student: true,
           },
         },
       },
@@ -354,15 +330,7 @@ router.delete("/:id", authenticate, async (req, res) => {
         attendanceSessions: true,
         studentCourses: {
           include: {
-            student: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                matricNumber: true,
-                status: true,
-              },
-            },
+            student: true,
           },
         },
       },
@@ -455,15 +423,7 @@ router.get("/:id/stats", authenticate, async (req, res) => {
           courseId: req.params.id,
         },
         include: {
-          student: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              matricNumber: true,
-              status: true,
-            },
-          },
+          student: true,
         },
       }).then((studentCourses) => studentCourses.filter(
         (sc) => sc.student && sc.student.biometricEnrolled
