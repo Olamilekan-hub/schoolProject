@@ -48,14 +48,16 @@ model Student {
   faculty          String?
   status           StudentStatus @default(ACTIVE)
   registeredById   String    @map("registered_by")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  status              StudentStatus        @default(ACTIVE)
+  biometricEnrolled   Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
   // Relations
   registeredBy      User               @relation("RegisteredBy", fields: [registeredById], references: [id])
   studentCourses    StudentCourse[]
   attendanceRecords AttendanceRecord[]
-  biometricTemplates BiometricTemplate[]
+  biometricTemplates  BiometricTemplate[]
 
   @@map("students")
 }
@@ -144,20 +146,27 @@ model AttendanceRecord {
 }
 
 model BiometricTemplate {
-  id               String          @id @default(uuid())
-  studentId        String          @map("student_id")
-  templateData     String          @map("template_data")
-  templateType     BiometricType   @default(FINGERPRINT) @map("template_type")
-  qualityScore     Decimal?        @map("quality_score") @db.Decimal(5,2)
-  enrollmentDevice Json?           @map("enrollment_device")
-  createdAt        DateTime        @default(now()) @map("created_at")
-  updatedAt        DateTime        @updatedAt @map("updated_at")
-
-  // Relations
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
+  id              String   @id @default(cuid())
+  studentId       String
+  templateData    String   @db.Text // Encrypted template (can be large)
+  templateType    TemplateType @default(FINGERPRINT)
+  templateFormat  String?  // e.g., "ANSI-378" for Digital Persona
+  scannerModel    String?  // e.g., "Digital Persona U.4500"
+  qualityScore    Float?
+  enrollmentDevice String? @db.Text // JSON string of device info
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
   @@unique([studentId, templateType])
-  @@map("biometric_templates")
+  @@index([studentId])
+}
+
+enum TemplateType {
+  FINGERPRINT
+  FACE
+  IRIS
 }
 
 model SystemLog {

@@ -34,7 +34,7 @@ import Card from "../components/UI/Card";
 import Badge from "../components/UI/Badge";
 import SearchInput from "../components/UI/SearchInput";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
-import BiometricEnrollment from "../components/Biometric/BiometricEnrollment";
+import DigitalPersonaEnrollment from '../components/Biometric/DigitalPersonaEnrollment'
 import StudentForm from "../components/Student/StudentForm";
 
 const Students: React.FC = () => {
@@ -146,9 +146,8 @@ const Students: React.FC = () => {
       render: (student: Student) => (
         <div className="flex items-center space-x-2">
           <Fingerprint
-            className={`h-4 w-4 ${
-              student.biometricEnrolled ? "text-success-600" : "text-gray-400"
-            }`}
+            className={`h-4 w-4 ${student.biometricEnrolled ? "text-success-600" : "text-gray-400"
+              }`}
           />
           <Badge
             variant={student.biometricEnrolled ? "success" : "error"}
@@ -192,11 +191,10 @@ const Students: React.FC = () => {
 
           <button
             onClick={() => handleBiometricEnrollment(student)}
-            className={`${
-              student.biometricEnrolled
+            className={`${student.biometricEnrolled
                 ? "text-success-600 hover:text-success-900"
                 : "text-warning-600 hover:text-warning-900"
-            }`}
+              }`}
             title={
               student.biometricEnrolled
                 ? "Update Biometric"
@@ -471,7 +469,7 @@ const Students: React.FC = () => {
       />
 
       {selectedStudent && (
-        <BiometricEnrollment
+        <DigitalPersonaEnrollment
           isOpen={showBiometricModal}
           onClose={() => {
             setShowBiometricModal(false);

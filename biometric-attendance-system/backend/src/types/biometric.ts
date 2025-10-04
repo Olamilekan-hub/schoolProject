@@ -40,10 +40,10 @@ export interface BiometricVerificationResult {
 export interface BiometricDevice {
   id: string
   name: string
-  type: BiometricType
-  manufacturer?: string
-  model?: string
-  serialNumber?: string
+  type: 'FINGERPRINT' | 'FACE' | 'IRIS'
+  manufacturer: string
+  model: string
+  serialNumber: string
   isConnected: boolean
   capabilities: string[]
 }

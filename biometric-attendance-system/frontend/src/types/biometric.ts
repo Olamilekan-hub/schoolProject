@@ -27,25 +27,29 @@ export interface BiometricScanResult {
   templateData?: string
   qualityScore?: number
   confidence?: number
-  deviceInfo?: Record<string, any>
+  deviceInfo?: BiometricDevice | null
 }
 
 export interface BiometricVerificationResult {
-  success: boolean
-  message: string
   matched: boolean
   confidence: number
-  studentId?: string
-  templateId?: string
+  studentId: string
+  templateId: string
+  student?: {
+    id: string
+    matricNumber: string
+    firstName: string
+    lastName: string
+  }
 }
 
 export interface BiometricDevice {
   id: string
   name: string
-  type: BiometricType
-  manufacturer?: string
-  model?: string
-  serialNumber?: string
+  type: 'FINGERPRINT' | 'FACE' | 'IRIS'
+  manufacturer: string
+  model: string
+  serialNumber: string
   isConnected: boolean
   capabilities: string[]
 }
