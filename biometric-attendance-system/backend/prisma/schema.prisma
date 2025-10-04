@@ -47,7 +47,6 @@ model Student {
   department       String?
   faculty          String?
   status           StudentStatus @default(ACTIVE)
-  registeredById   String    @map("registered_by")
   status              StudentStatus        @default(ACTIVE)
   biometricEnrolled   Boolean              @default(false)
   createdAt           DateTime             @default(now())
