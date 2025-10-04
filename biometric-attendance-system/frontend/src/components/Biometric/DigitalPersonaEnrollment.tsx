@@ -27,10 +27,13 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
   const [biometricData, setBiometricData] = useState<BiometricScanResult | null>(null)
   const [isEnrolling, setIsEnrolling] = useState(false)
   const [scansCompleted, setScansCompleted] = useState(0)
-  const requiredScans = 4 // Digital Persona typically requires 4 scans for enrollment
+  const [allScans, setAllScans] = useState<string[]>([])
+  const requiredScans = 4
 
   const handleScanResult = (result: BiometricScanResult) => {
-    if (result.success) {
+    if (result.success && result.templateData) {
+      // Store this scan
+      setAllScans(prev => [...prev, result.templateData!])
       setBiometricData(result)
       setScansCompleted(prev => prev + 1)
       
@@ -38,11 +41,7 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
         setEnrollmentStep('confirm')
         toast.success(`All ${requiredScans} scans completed successfully!`)
       } else {
-        toast.success(`Scan ${scansCompleted + 1} of ${requiredScans} completed`)
-        // Auto-trigger next scan after a brief delay
-        setTimeout(() => {
-          // Scanner will be ready for next scan
-        }, 1500)
+        toast.success(`Scan ${scansCompleted + 1} of ${requiredScans} completed. Place your finger again for scan ${scansCompleted + 2}.`)
       }
     } else {
       toast.error(result.message)
@@ -50,13 +49,21 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
   }
 
   const handleEnrollment = async () => {
-    if (!biometricData || !biometricData.templateData) return
+    if (!biometricData || allScans.length < requiredScans) {
+      toast.error('Not enough scans completed')
+      return
+    }
 
     setIsEnrolling(true)
     try {
+      // Combine all scans into enrollment data
       const enrollmentData: BiometricEnrollmentData = {
         studentId: student.id,
-        biometricData: biometricData.templateData,
+        biometricData: JSON.stringify({
+          scans: allScans,
+          scanCount: requiredScans,
+          finalTemplate: biometricData.templateData
+        }),
         deviceInfo: biometricData.deviceInfo,
         qualityScore: biometricData.qualityScore,
       }
@@ -83,6 +90,7 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
     setEnrollmentStep('info')
     setBiometricData(null)
     setScansCompleted(0)
+    setAllScans([])
     setIsEnrolling(false)
   }
 
@@ -212,6 +220,7 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
               </div>
             </div>
 
+            {/* KEY FIX: Show the scanner component here */}
             <DigitalPersonaScanner
               onScanResult={handleScanResult}
               mode="capture"
@@ -227,6 +236,7 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
                   variant="warning" 
                   onClick={() => {
                     setScansCompleted(0)
+                    setAllScans([])
                     setBiometricData(null)
                     toast.info('Enrollment reset. Please start over.')
                   }}
@@ -299,7 +309,7 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
             )}
 
             <div className="p-4 text-sm text-green-800 rounded-lg bg-green-50">
-              <p className="mb-2 font-medium">✓ Ready to complete enrollment</p>
+              <p className="mb-2 font-medium">Ready to complete enrollment</p>
               <p>
                 The biometric template will be encrypted and securely stored. 
                 The student will be able to mark attendance using this enrolled fingerprint.
@@ -312,6 +322,7 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
                 onClick={() => {
                   setEnrollmentStep('scan')
                   setScansCompleted(0)
+                  setAllScans([])
                   setBiometricData(null)
                 }}
                 fullWidth
@@ -348,11 +359,11 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
 
             <div className="p-4 rounded-lg bg-success-50">
               <p className="text-sm text-success-800">
-                ✓ The student can now mark attendance using their fingerprint with the Digital Persona U.4500 scanner.
+                The student can now mark attendance using their fingerprint with the Digital Persona U.4500 scanner.
                 <br />
-                ✓ Biometric data has been securely encrypted and stored.
+                Biometric data has been securely encrypted and stored.
                 <br />
-                ✓ Template uses ANSI-378 standard minutiae format.
+                Template uses ANSI-378 standard minutiae format.
               </p>
             </div>
           </div>

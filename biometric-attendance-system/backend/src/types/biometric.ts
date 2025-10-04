@@ -35,6 +35,7 @@ export interface BiometricVerificationResult {
   confidence: number
   studentId?: string
   templateId?: string
+  mode?: any
 }
 
 export interface BiometricDevice {
