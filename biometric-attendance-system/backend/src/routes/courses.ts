@@ -108,144 +108,6 @@ router.get("/", authenticate, async (req, res) => {
   }
 });
 
-// Get single course
-router.get("/:id", authenticate, async (req, res) => {
-  try {
-    // Fetch course with relations
-    const course = await prisma.course.findFirst({
-      where: {
-        id: req.params.id,
-        teacherId: (req as any).user.id,
-      },
-      include: {
-        studentCourses: {
-          include: {
-            student: {
-              include: {
-                biometricTemplates: true,
-              },
-            },
-          },
-        },
-        attendanceSessions: {
-          include: {
-            attendanceRecords: true,
-          },
-        },
-      },
-    });
-
-    if (!course) {
-      return res.status(404).json({
-        success: false,
-        message: "Course not found",
-      });
-    }
-
-    // Calculate statistics
-    const totalStudents = course.studentCourses.length;
-    const totalSessions = course.attendanceSessions.length;
-    const totalAttendanceRecords = course.attendanceSessions.reduce(
-      (sum, session) => sum + session.attendanceRecords.length,
-      0
-    );
-    const averageAttendance =
-      totalSessions > 0 && totalStudents > 0
-        ? Math.round(
-            (totalAttendanceRecords / (totalSessions * totalStudents)) * 100
-          )
-        : 0;
-    const activeStudents = course.studentCourses.filter(
-      (sc) => sc.student && sc.student.status === "ACTIVE"
-    ).length;
-    // Compute biometricEnrolled by checking biometricTemplates
-    const biometricEnrolled = course.studentCourses.filter(
-      (sc) => sc.student && sc.student.biometricTemplates && sc.student.biometricTemplates.length > 0
-    ).length;
-
-    res.json({
-      success: true,
-      data: {
-        ...course,
-        statistics: {
-          totalStudents,
-          totalSessions,
-          totalAttendanceRecords,
-          averageAttendance,
-          activeStudents,
-          biometricEnrolled,
-        },
-      },
-    });
-  } catch (error) {
-    logger.error("Get course error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch course",
-    });
-  }
-});
-
-// Create course
-router.post("/", authenticate, async (req, res) => {
-  try {
-    const { error, value } = createCourseSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.details[0].message,
-      });
-    }
-
-    // Check if course code already exists for this teacher
-    const existingCourse = await prisma.course.findFirst({
-      where: {
-        courseCode: value.courseCode,
-        teacherId: (req as any).user.id,
-      },
-    });
-
-    if (existingCourse) {
-      return res.status(400).json({
-        success: false,
-        message: "Course with this code already exists",
-      });
-    }
-
-    const course = await prisma.course.create({
-      data: {
-        ...value,
-        teacherId: (req as any).user.id,
-      },
-      include: {
-        teacher: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-      },
-    });
-
-    logger.info(
-      `New course created: ${course.courseCode} by ${(req as any).user.email}`
-    );
-
-    res.status(201).json({
-      success: true,
-      message: "Course created successfully",
-      data: course,
-    });
-  } catch (error) {
-    logger.error("Create course error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to create course",
-    });
-  }
-});
-
 // Update course
 router.put("/:id", authenticate, async (req, res) => {
   try {
@@ -708,6 +570,84 @@ router.get("/all", async (req, res) => {
   }
 });
 
+// Get single course
+router.get("/:id", authenticate, async (req, res) => {
+  try {
+    // Fetch course with relations
+    const course = await prisma.course.findFirst({
+      where: {
+        id: req.params.id,
+        teacherId: (req as any).user.id,
+      },
+      include: {
+        studentCourses: {
+          include: {
+            student: {
+              include: {
+                biometricTemplates: true,
+              },
+            },
+          },
+        },
+        attendanceSessions: {
+          include: {
+            attendanceRecords: true,
+          },
+        },
+      },
+    });
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Calculate statistics
+    const totalStudents = course.studentCourses.length;
+    const totalSessions = course.attendanceSessions.length;
+    const totalAttendanceRecords = course.attendanceSessions.reduce(
+      (sum, session) => sum + session.attendanceRecords.length,
+      0
+    );
+    const averageAttendance =
+      totalSessions > 0 && totalStudents > 0
+        ? Math.round(
+            (totalAttendanceRecords / (totalSessions * totalStudents)) * 100
+          )
+        : 0;
+    const activeStudents = course.studentCourses.filter(
+      (sc) => sc.student && sc.student.status === "ACTIVE"
+    ).length;
+    // Compute biometricEnrolled by checking biometricTemplates
+    const biometricEnrolled = course.studentCourses.filter(
+      (sc) => sc.student && sc.student.biometricTemplates && sc.student.biometricTemplates.length > 0
+    ).length;
+
+    res.json({
+      success: true,
+      data: {
+        ...course,
+        statistics: {
+          totalStudents,
+          totalSessions,
+          totalAttendanceRecords,
+          averageAttendance,
+          activeStudents,
+          biometricEnrolled,
+        },
+      },
+    });
+  } catch (error) {
+    logger.error("Get course error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch course",
+    });
+  }
+});
+
 // Create new course (public endpoint for registration)
 router.post("/create", async (req, res) => {
   try {
@@ -767,6 +707,66 @@ router.post("/create", async (req, res) => {
         creditUnits: course.creditUnits,
         semester: course.semester,
       },
+    });
+  } catch (error) {
+    logger.error("Create course error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create course",
+    });
+  }
+});
+
+// Create course
+router.post("/", authenticate, async (req, res) => {
+  try {
+    const { error, value } = createCourseSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+      });
+    }
+
+    // Check if course code already exists for this teacher
+    const existingCourse = await prisma.course.findFirst({
+      where: {
+        courseCode: value.courseCode,
+        teacherId: (req as any).user.id,
+      },
+    });
+
+    if (existingCourse) {
+      return res.status(400).json({
+        success: false,
+        message: "Course with this code already exists",
+      });
+    }
+
+    const course = await prisma.course.create({
+      data: {
+        ...value,
+        teacherId: (req as any).user.id,
+      },
+      include: {
+        teacher: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    logger.info(
+      `New course created: ${course.courseCode} by ${(req as any).user.email}`
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Course created successfully",
+      data: course,
     });
   } catch (error) {
     logger.error("Create course error:", error);
