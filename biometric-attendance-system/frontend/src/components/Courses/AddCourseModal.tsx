@@ -9,6 +9,7 @@ import Input from '../UI/Input'
 import Select from '../UI/Select'
 import Modal from '../UI/Modal'
 import type { Option } from '../UI/MultiSelect'
+import { coursesService } from '../../services/courses'
 
 const createCourseSchema = z.object({
   courseCode: z
@@ -48,32 +49,23 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
   })
 
   const onSubmit = async (data: CreateCourseFormData) => {
-    try {
-      const response = await fetch('/courses/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
+  try {
+    // Use the coursesService instead of direct fetch
+    const newCourse = await coursesService.createCourse(data);
+    
+    if (newCourse) {
+      // Add the new course to the parent component
+      onCourseAdded(newCourse);
 
-      const result = await response.json()
-
-      if (result.success) {
-        // Add the new course to the parent component
-        onCourseAdded(result.data)
-
-        // Reset form and close modal
-        reset()
-        onClose()
-      } else {
-        // Handle error (could show toast here)
-        console.error('Failed to create course:', result.message)
-      }
-    } catch (error) {
-      console.error('Error creating course:', error)
+      // Reset form and close modal
+      reset();
+      onClose();
     }
+  } catch (error) {
+    console.error('Error creating course:', error);
+    // You might want to show an error toast here
   }
+};
 
   const handleClose = () => {
     reset()
