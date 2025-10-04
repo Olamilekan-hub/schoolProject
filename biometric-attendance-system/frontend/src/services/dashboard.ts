@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL
 const dashboardService = {
   getDashboardData: async (): Promise<DashboardData> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.get(`${API_URL}/dashboard`, {
+    const response = await axios.get(`${API_URL}/api/dashboard`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -15,7 +15,7 @@ const dashboardService = {
 
   getAttendanceTrend: async (days: number = 7): Promise<any[]> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.get(`${API_URL}/dashboard/attendance-trend?days=${days}`, {
+    const response = await axios.get(`${API_URL}/api/dashboard/attendance-trend?days=${days}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -23,7 +23,7 @@ const dashboardService = {
 
   getCourseAttendance: async (): Promise<any[]> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.get(`${API_URL}/dashboard/course-attendance`, {
+    const response = await axios.get(`${API_URL}/api/dashboard/course-attendance`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data

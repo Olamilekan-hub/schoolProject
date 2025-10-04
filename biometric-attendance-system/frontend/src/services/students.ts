@@ -16,7 +16,7 @@ const studentService = {
       }
     })
     
-    const response = await axios.get(`${API_URL}/students?${params}`, {
+    const response = await axios.get(`${API_URL}/api/students?${params}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -24,7 +24,7 @@ const studentService = {
 
   getStudent: async (id: string): Promise<Student> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.get(`${API_URL}/students/${id}`, {
+    const response = await axios.get(`${API_URL}/api/students/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -32,7 +32,7 @@ const studentService = {
 
   createStudent: async (data: CreateStudentData): Promise<Student> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.post(`${API_URL}/students`, data, {
+    const response = await axios.post(`${API_URL}/api/students`, data, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -41,7 +41,7 @@ const studentService = {
   updateStudent: async (data: UpdateStudentData): Promise<Student> => {
     const token = localStorage.getItem('accessToken')
     const { id, ...updateData } = data
-    const response = await axios.put(`${API_URL}/students/${id}`, updateData, {
+    const response = await axios.put(`${API_URL}/api/students/${id}`, updateData, {
       headers: { Authorization: `Bearer ${token}` }
     })
     return response.data.data
@@ -49,7 +49,7 @@ const studentService = {
 
   deleteStudent: async (id: string): Promise<void> => {
     const token = localStorage.getItem('accessToken')
-    await axios.delete(`${API_URL}/students/${id}`, {
+    await axios.delete(`${API_URL}/api/students/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   },
@@ -59,7 +59,7 @@ const studentService = {
     const formData = new FormData()
     formData.append('file', file)
     
-    const response = await axios.post(`${API_URL}/students/bulk-import`, formData, {
+    const response = await axios.post(`${API_URL}/api/students/bulk-import`, formData, {
       headers: { 
         Authorization: `Bearer ${token}`,
         'Content-Type': 'multipart/form-data'
@@ -70,7 +70,7 @@ const studentService = {
 
   exportStudents: async (format: 'csv' | 'excel' = 'excel'): Promise<Blob> => {
     const token = localStorage.getItem('accessToken')
-    const response = await axios.get(`${API_URL}/students/export?format=${format}`, {
+    const response = await axios.get(`${API_URL}/api/students/export?format=${format}`, {
       headers: { Authorization: `Bearer ${token}` },
       responseType: 'blob'
     })
