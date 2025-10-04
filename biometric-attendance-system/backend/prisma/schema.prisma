@@ -74,7 +74,7 @@ model Course {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  teacher           User                @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacher           User?               @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   studentCourses    StudentCourse[]
   attendanceSessions AttendanceSession[]
 

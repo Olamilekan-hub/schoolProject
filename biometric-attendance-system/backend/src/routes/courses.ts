@@ -604,7 +604,7 @@ router.post("/create", async (req, res) => {
         creditUnits: value.creditUnits,
         semester: value.semester,
         academicYear: value.academicYear,
-        teacherId: "temp-id", // Will be updated when teacher registers
+        // teacherId: "temp-id", // Will be updated when teacher registers
       },
       select: {
         id: true,
