@@ -570,6 +570,75 @@ router.get("/all", async (req, res) => {
   }
 });
 
+// Create new course (public endpoint for registration)
+router.post("/create", async (req, res) => {
+  try {
+    const { error, value } = createCourseSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+      });
+    }
+
+    // Check if course code already exists
+    const existingCourse = await prisma.course.findUnique({
+      where: {
+        courseCode: value.courseCode,
+      },
+    });
+
+    if (existingCourse) {
+      return res.status(400).json({
+        success: false,
+        message: "Course with this code already exists",
+      });
+    }
+
+    // Create course without teacher assignment (will be assigned during registration)
+    const course = await prisma.course.create({
+      data: {
+        courseCode: value.courseCode,
+        courseTitle: value.courseTitle,
+        description: value.description,
+        creditUnits: value.creditUnits,
+        semester: value.semester,
+        academicYear: value.academicYear,
+        teacherId: "temp-id", // Will be updated when teacher registers
+      },
+      select: {
+        id: true,
+        courseCode: true,
+        courseTitle: true,
+        creditUnits: true,
+        semester: true,
+      },
+    });
+
+    logger.info(`Course created: ${course.courseCode}`);
+
+    res.status(201).json({
+      success: true,
+      message: "Course created successfully",
+      data: {
+        id: course.id,
+        value: course.id,
+        label: `${course.courseCode} - ${course.courseTitle}`,
+        courseCode: course.courseCode,
+        courseTitle: course.courseTitle,
+        creditUnits: course.creditUnits,
+        semester: course.semester,
+      },
+    });
+  } catch (error) {
+    logger.error("Create course error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create course",
+    });
+  }
+});
+
 // Get single course
 router.get("/:id", authenticate, async (req, res) => {
   try {
@@ -644,75 +713,6 @@ router.get("/:id", authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch course",
-    });
-  }
-});
-
-// Create new course (public endpoint for registration)
-router.post("/create", async (req, res) => {
-  try {
-    const { error, value } = createCourseSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.details[0].message,
-      });
-    }
-
-    // Check if course code already exists
-    const existingCourse = await prisma.course.findUnique({
-      where: {
-        courseCode: value.courseCode,
-      },
-    });
-
-    if (existingCourse) {
-      return res.status(400).json({
-        success: false,
-        message: "Course with this code already exists",
-      });
-    }
-
-    // Create course without teacher assignment (will be assigned during registration)
-    const course = await prisma.course.create({
-      data: {
-        courseCode: value.courseCode,
-        courseTitle: value.courseTitle,
-        description: value.description,
-        creditUnits: value.creditUnits,
-        semester: value.semester,
-        academicYear: value.academicYear,
-        teacherId: "temp-id", // Will be updated when teacher registers
-      },
-      select: {
-        id: true,
-        courseCode: true,
-        courseTitle: true,
-        creditUnits: true,
-        semester: true,
-      },
-    });
-
-    logger.info(`Course created: ${course.courseCode}`);
-
-    res.status(201).json({
-      success: true,
-      message: "Course created successfully",
-      data: {
-        id: course.id,
-        value: course.id,
-        label: `${course.courseCode} - ${course.courseTitle}`,
-        courseCode: course.courseCode,
-        courseTitle: course.courseTitle,
-        creditUnits: course.creditUnits,
-        semester: course.semester,
-      },
-    });
-  } catch (error) {
-    logger.error("Create course error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to create course",
     });
   }
 });

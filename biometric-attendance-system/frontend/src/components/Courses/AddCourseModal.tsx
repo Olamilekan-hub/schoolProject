@@ -140,7 +140,7 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
           <Button
             type="button"
             variant="secondary"
-            onClick={handleClose}
+            // onClick={handleClose}
             disabled={isSubmitting}
           >
             Cancel
