@@ -49,7 +49,7 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
 
   const onSubmit = async (data: CreateCourseFormData) => {
     try {
-      const response = await fetch('/api/courses/create', {
+      const response = await fetch('/courses/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -139,14 +139,14 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
           <option value="SECOND">Second Semester</option>
         </Select>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div className="p-3 border border-blue-200 rounded-lg bg-blue-50">
           <p className="text-sm text-blue-800">
             <strong>Note:</strong> Course code should follow the format ABC123
             (3 letters + 3 numbers). Example: CSC101, MTH201, ENG102
           </p>
         </div>
 
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end pt-4 space-x-3 border-t border-gray-200">
           <Button
             type="button"
             variant="secondary"
