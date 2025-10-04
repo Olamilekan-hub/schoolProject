@@ -67,18 +67,16 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
   }
 };
 
-  const handleClose = () => {
-    reset()
-    onClose()
-  }
-
   return (
     <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Add New Course"
-      size="md"
-    >
+    isOpen={isOpen}
+    onClose={() => {
+      reset();
+      onClose();
+    }}
+    title="Add New Course"
+    size="md"
+  >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <Input
