@@ -582,10 +582,8 @@ router.post("/create", async (req, res) => {
     }
 
     // Check if course code already exists
-    const existingCourse = await prisma.course.findUnique({
-      where: {
-        courseCode: value.courseCode,
-      },
+    const existingCourse = await prisma.course.findFirst({
+      where: { courseCode: value.courseCode },
     });
 
     if (existingCourse) {
@@ -595,7 +593,26 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    // Create course without teacher assignment (will be assigned during registration)
+    // Get or create a "system" user for unassigned courses
+    let systemUser = await prisma.user.findFirst({
+      where: { email: "system@schoolproject.com" },
+    });
+
+    if (!systemUser) {
+      // Create system user if it doesn't exist
+      systemUser = await prisma.user.create({
+        data: {
+          email: "system@schoolproject.com",
+          passwordHash: "SYSTEM_USER_NO_LOGIN",
+          firstName: "System",
+          lastName: "User",
+          role: "ADMIN",
+          isActive: false, // Inactive so it can't be used to login
+        },
+      });
+    }
+
+    // Create course with system user as temporary teacher
     const course = await prisma.course.create({
       data: {
         courseCode: value.courseCode,
@@ -604,7 +621,7 @@ router.post("/create", async (req, res) => {
         creditUnits: value.creditUnits,
         semester: value.semester,
         academicYear: value.academicYear,
-        // teacherId: "temp-id", // Will be updated when teacher registers
+        teacherId: systemUser.id, // Use system user
       },
       select: {
         id: true,
