@@ -1,311 +1,262 @@
-// src/hooks/useDigitalPersona.ts
-// PRODUCTION SOLUTION using official HID DigitalPersona WebSDK
+// frontend/src/hooks/useDigitalPersona.ts
+// FINAL VERSION - Connects to your EXISTING backend
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import type { BiometricScanResult, BiometricDevice } from '../types/biometric'
+import { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import type { BiometricScanResult, BiometricDevice } from '../types/biometric';
 
-// Import WebSDK types (NOT the code - code is loaded via script tag)
-declare global {
-  interface Window {
-    WebSdk: {
-      FingerprintReader: any
-      SampleFormat: any
-      DeviceUid: string
-    }
-  }
-}
-
-interface UseDigitalPersonaOptions {
-  timeout?: number
-  quality?: number
-}
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 interface UseDigitalPersonaReturn {
-  isSupported: boolean
-  isConnected: boolean
-  deviceInfo: BiometricDevice | null
-  startCapture: (options?: UseDigitalPersonaOptions) => Promise<BiometricScanResult>
-  stopCapture: () => void
-  getDeviceInfo: () => Promise<BiometricDevice | null>
-  enrollFingerprint: (userId: string) => Promise<BiometricScanResult>
-  verifyFingerprint: (userId: string) => Promise<BiometricScanResult>
+  isSupported: boolean;
+  isConnected: boolean;
+  deviceInfo: BiometricDevice | null;
+  startCapture: () => Promise<BiometricScanResult>;
+  stopCapture: () => void;
+  getDeviceInfo: () => Promise<BiometricDevice | null>;
+  enrollFingerprint: (userId: string, requiredScans?: number) => Promise<BiometricScanResult>;
+  error: string | null;
+  isCapturing: boolean;
 }
 
 export const useDigitalPersona = (): UseDigitalPersonaReturn => {
-  const [isSupported, setIsSupported] = useState(false)
-  const [isConnected, setIsConnected] = useState(false)
-  const [deviceInfo, setDeviceInfo] = useState<BiometricDevice | null>(null)
-  const readerRef = useRef<any>(null)
-  const [isAcquiring, setIsAcquiring] = useState(false)
-  const captureResolveRef = useRef<any>(null)
+  const [isSupported, setIsSupported] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [deviceInfo, setDeviceInfo] = useState<BiometricDevice | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
 
-  // Initialize WebSDK and reader
+  // Check device status on mount and periodically
   useEffect(() => {
-    const initReader = async () => {
-      // Check if WebSDK is loaded
-      if (!window.WebSdk) {
-        console.warn('DigitalPersona WebSDK not loaded. Make sure WebSdk script is included.')
-        setIsSupported(false)
-        return
-      }
+    let mounted = true;
 
+    const checkDevice = async () => {
       try {
-        setIsSupported(true)
+        const token = localStorage.getItem('accessToken');
+        if (!token) return;
 
-        // Import FingerprintReader class
-        const { FingerprintReader, SampleFormat } = window.WebSdk
+        const response = await axios.get(`${API_URL}/api/biometric/device/status`, {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 5000
+        });
 
-        // Create reader instance
-        const reader = new FingerprintReader()
-        readerRef.current = reader
+        if (!mounted) return;
 
-        // Set up event handlers
-        reader.on('DeviceConnected', handleDeviceConnected)
-        reader.on('DeviceDisconnected', handleDeviceDisconnected)
-        reader.on('SamplesAcquired', handleSamplesAcquired)
-        reader.on('QualityReported', handleQualityReported)
-        reader.on('ErrorOccurred', handleError)
-
-        // Start device enumeration
-        const devices = await reader.enumerateDevices()
-        if (devices && devices.length > 0) {
-          handleDeviceConnected({ deviceUid: devices[0] })
+        if (response.data.success) {
+          setIsSupported(true);
+          const deviceData = response.data.data;
+          
+          if (deviceData.isConnected && deviceData.deviceInfo) {
+            setIsConnected(true);
+            setDeviceInfo({
+              id: 'dp-backend-device',
+              name: deviceData.deviceInfo.name || 'Digital Persona U.are.U 4500',
+              type: 'FINGERPRINT',
+              manufacturer: deviceData.deviceInfo.manufacturer || 'HID Global',
+              model: deviceData.deviceInfo.model || 'U.are.U 4500',
+              serialNumber: 'backend-managed',
+              isConnected: true,
+              capabilities: ['fingerprint', 'enrollment', 'verification']
+            });
+            setError(null);
+          } else {
+            setIsConnected(false);
+            setError(
+              deviceData.installed 
+                ? 'Digital Persona device not connected. Please connect the scanner.'
+                : 'Digital Persona not installed on server. Please install HID Authentication Device Client.'
+            );
+          }
         }
-      } catch (error) {
-        console.error('Failed to initialize DigitalPersona reader:', error)
-        setIsSupported(false)
-      }
-    }
+      } catch (err: any) {
+        if (!mounted) return;
 
-    // Wait for WebSDK to load
-    const checkWebSDK = setInterval(() => {
-      if (window.WebSdk) {
-        clearInterval(checkWebSDK)
-        initReader()
+        setIsSupported(false);
+        setIsConnected(false);
+        
+        if (err.code === 'ECONNREFUSED' || err.code === 'ERR_NETWORK') {
+          setError('Cannot connect to backend server');
+        } else if (err.response?.status === 401) {
+          setError('Authentication required');
+        } else {
+          setError(err.message || 'Failed to check device status');
+        }
       }
-    }, 100)
+    };
+
+    checkDevice();
+    const interval = setInterval(checkDevice, 15000); // Check every 15 seconds
 
     return () => {
-      clearInterval(checkWebSDK)
-      if (readerRef.current) {
-        readerRef.current.stopAcquisition()
-        readerRef.current.off()
-      }
-    }
-  }, [])
-
-  const handleDeviceConnected = useCallback((event: any) => {
-    console.log('Device connected:', event)
-    setIsConnected(true)
-    setDeviceInfo({
-      id: event.deviceUid || 'dp-u4500',
-      name: 'Digital Persona U.are.U 4500',
-      type: 'FINGERPRINT',
-      manufacturer: 'Digital Persona',
-      model: 'U.are.U 4500',
-      serialNumber: event.deviceUid || 'N/A',
-      isConnected: true,
-      capabilities: ['fingerprint', 'enrollment', 'verification']
-    })
-  }, [])
-
-  const handleDeviceDisconnected = useCallback((event: any) => {
-    console.log('Device disconnected:', event)
-    setIsConnected(false)
-    setDeviceInfo(null)
-  }, [])
-
-  const handleSamplesAcquired = useCallback((event: any) => {
-    console.log('Samples acquired:', event)
-    if (captureResolveRef.current) {
-      // Convert samples to base64
-      const samples = event.samples
-      const templateData = JSON.stringify({
-        samples: samples,
-        format: 'Intermediate',
-        timestamp: new Date().toISOString()
-      })
-
-      captureResolveRef.current({
-        success: true,
-        message: 'Fingerprint captured successfully',
-        templateData: templateData,
-        qualityScore: 85,
-        confidence: 95,
-        deviceInfo: deviceInfo
-      })
-      captureResolveRef.current = null
-      setIsAcquiring(false)
-    }
-  }, [deviceInfo])
-
-  const handleQualityReported = useCallback((event: any) => {
-    console.log('Quality reported:', event.quality)
-  }, [])
-
-  const handleError = useCallback((event: any) => {
-    console.error('Reader error:', event)
-    if (captureResolveRef.current) {
-      captureResolveRef.current({
-        success: false,
-        message: event.error || 'Fingerprint capture failed',
-        deviceInfo: deviceInfo
-      })
-      captureResolveRef.current = null
-      setIsAcquiring(false)
-    }
-  }, [deviceInfo])
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const getDeviceInfo = useCallback(async (): Promise<BiometricDevice | null> => {
-    if (!readerRef.current) return null
-    
     try {
-      const devices = await readerRef.current.enumerateDevices()
-      if (devices && devices.length > 0) {
-        setIsConnected(true)
-        return deviceInfo
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Authentication required');
       }
-    } catch (error) {
-      console.error('Failed to enumerate devices:', error)
-    }
-    return null
-  }, [deviceInfo])
 
-  const startCapture = useCallback(async (
-    options: UseDigitalPersonaOptions = {}
-  ): Promise<BiometricScanResult> => {
+      const response = await axios.get(`${API_URL}/api/biometric/device/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 5000
+      });
+
+      if (response.data.success && response.data.data.deviceInfo) {
+        return deviceInfo;
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }, [deviceInfo]);
+
+  const startCapture = useCallback(async (): Promise<BiometricScanResult> => {
     if (!isSupported) {
       return {
         success: false,
-        message: 'DigitalPersona WebSDK not available. Please install DigitalPersona Lite Client.'
-      }
+        message: 'Biometric capture not supported. Backend may not have Digital Persona installed.'
+      };
     }
 
     if (!isConnected) {
       return {
         success: false,
-        message: 'Digital Persona U.4500 device not connected.'
-      }
+        message: 'No fingerprint device connected. Please ensure scanner is connected to the server.'
+      };
     }
 
-    if (isAcquiring) {
+    if (isCapturing) {
       return {
         success: false,
         message: 'Already capturing fingerprint. Please wait.'
-      }
+      };
     }
 
     try {
-      setIsAcquiring(true)
-      const { SampleFormat } = window.WebSdk
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      setIsCapturing(true);
+      setError(null);
+
+      const response = await axios.post(
+        `${API_URL}/api/biometric/capture`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 35000 // 35 second timeout
+        }
+      );
+
+      setIsCapturing(false);
+
+      if (response.data.success) {
+        return {
+          success: true,
+          message: 'Fingerprint captured successfully',
+          templateData: response.data.data.templateData,
+          qualityScore: response.data.data.qualityScore,
+          confidence: response.data.data.confidence,
+          deviceInfo: deviceInfo
+        };
+      } else {
+        throw new Error(response.data.message || 'Capture failed');
+      }
+    } catch (err: any) {
+      setIsCapturing(false);
       
-      // Start acquisition
-      await readerRef.current.startAcquisition(SampleFormat.Intermediate)
+      let errorMessage = 'Failed to capture fingerprint';
+      
+      if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Capture timed out. Please place your finger on the scanner and try again.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
 
-      // Return promise that resolves when sample is acquired
-      return new Promise((resolve) => {
-        captureResolveRef.current = resolve
+      setError(errorMessage);
 
-        // Set timeout
-        const timeout = options.timeout || 30000
-        setTimeout(() => {
-          if (captureResolveRef.current) {
-            captureResolveRef.current({
-              success: false,
-              message: 'Fingerprint capture timed out',
-              deviceInfo: deviceInfo
-            })
-            captureResolveRef.current = null
-            setIsAcquiring(false)
-            readerRef.current.stopAcquisition()
-          }
-        }, timeout)
-      })
-    } catch (error: any) {
-      setIsAcquiring(false)
       return {
         success: false,
-        message: error.message || 'Failed to start fingerprint capture',
+        message: errorMessage,
         deviceInfo: deviceInfo
-      }
+      };
     }
-  }, [isSupported, isConnected, isAcquiring, deviceInfo])
+  }, [isSupported, isConnected, isCapturing, deviceInfo]);
 
   const stopCapture = useCallback(() => {
-    if (readerRef.current && isAcquiring) {
-      readerRef.current.stopAcquisition()
-      setIsAcquiring(false)
-      if (captureResolveRef.current) {
-        captureResolveRef.current({
-          success: false,
-          message: 'Capture cancelled',
-          deviceInfo: deviceInfo
-        })
-        captureResolveRef.current = null
-      }
-    }
-  }, [isAcquiring, deviceInfo])
+    setIsCapturing(false);
+  }, []);
 
-  const enrollFingerprint = useCallback(async (userId: string): Promise<BiometricScanResult> => {
+  const enrollFingerprint = useCallback(async (
+    userId: string,
+    requiredScans: number = 4
+  ): Promise<BiometricScanResult> => {
     if (!isSupported || !isConnected) {
       return {
         success: false,
         message: 'Digital Persona device not available'
-      }
+      };
     }
 
     try {
-      // Capture 4 samples for enrollment
-      const samples = []
-      const requiredScans = 4
-
+      const samples: string[] = [];
+      
       for (let i = 0; i < requiredScans; i++) {
-        const result = await startCapture()
+        console.log(`Capturing sample ${i + 1} of ${requiredScans}...`);
+        
+        const result = await startCapture();
         
         if (!result.success) {
           return {
             success: false,
-            message: `Failed to capture sample ${i + 1} of ${requiredScans}: ${result.message}`
-          }
+            message: `Failed at scan ${i + 1} of ${requiredScans}: ${result.message}`
+          };
         }
 
         if (result.templateData) {
-          samples.push(result.templateData)
+          samples.push(result.templateData);
         }
 
         // Small delay between captures
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        if (i < requiredScans - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
       }
 
-      // Combine all samples into enrollment template
+      // Combine all samples
       const enrollmentData = JSON.stringify({
+        template: samples[0],
         samples: samples,
         userId: userId,
         scanCount: requiredScans,
-        format: 'Intermediate',
+        format: 'ANSI-378',
         enrollmentDate: new Date().toISOString()
-      })
+      });
 
       return {
         success: true,
-        message: 'Fingerprint enrollment completed successfully',
+        message: `Enrollment completed with ${requiredScans} samples`,
         templateData: enrollmentData,
         qualityScore: 95,
         confidence: 100,
         deviceInfo: deviceInfo
-      }
-    } catch (error: any) {
+      };
+    } catch (err: any) {
       return {
         success: false,
-        message: error.message || 'Enrollment failed',
+        message: err.message || 'Enrollment failed',
         deviceInfo: deviceInfo
-      }
+      };
     }
-  }, [isSupported, isConnected, startCapture, deviceInfo])
-
-  const verifyFingerprint = useCallback(async (userId: string): Promise<BiometricScanResult> => {
-    return startCapture({ quality: 60 })
-  }, [startCapture])
+  }, [isSupported, isConnected, startCapture, deviceInfo]);
 
   return {
     isSupported,
@@ -315,6 +266,7 @@ export const useDigitalPersona = (): UseDigitalPersonaReturn => {
     stopCapture,
     getDeviceInfo,
     enrollFingerprint,
-    verifyFingerprint
-  }
-}
+    error,
+    isCapturing
+  };
+};

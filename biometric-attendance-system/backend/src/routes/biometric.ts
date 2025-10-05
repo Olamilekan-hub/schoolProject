@@ -2,42 +2,126 @@ import express from "express";
 import { prisma } from "../config/database";
 import { authenticate } from "../middleware/auth";
 import { encryptBiometric, verifyBiometric } from "../utils/biometric";
+import { digitalPersonaService } from "../services/digitalPersonaService"; // Added
 import { logger } from "../utils/logger";
 
 const router = express.Router();
 
-// Enroll biometric with Digital Persona
+/* ============================================================
+   NEW ENDPOINT: DEVICE STATUS CHECK
+============================================================ */
+router.get("/device/status", authenticate, async (req, res) => {
+  try {
+    const status = await digitalPersonaService.getDeviceStatus();
+    res.json({
+      success: true,
+      data: {
+        isConnected: status.connected,
+        installed: status.installed,
+        deviceInfo: status.connected
+          ? {
+              name: status.model || "Digital Persona U.are.U 4500",
+              manufacturer: "HID Global",
+              model: status.model || "U.are.U 4500",
+              type: "FINGERPRINT",
+            }
+          : null,
+      },
+    });
+  } catch (error) {
+    logger.error("Device status check error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to check device status",
+    });
+  }
+});
+
+/* ============================================================
+   NEW ENDPOINT: LIVE CAPTURE
+============================================================ */
+router.post("/capture", authenticate, async (req, res) => {
+  try {
+    logger.info("Starting fingerprint capture...");
+
+    const result = await digitalPersonaService.captureFingerprint();
+
+    if (result.success) {
+      res.json({
+        success: true,
+        data: {
+          templateData: result.templateData,
+          qualityScore: result.qualityScore,
+          confidence: result.confidence,
+        },
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.error || "Capture failed",
+      });
+    }
+  } catch (error: any) {
+    logger.error("Capture error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to capture fingerprint",
+    });
+  }
+});
+
+/* ============================================================
+   ENROLL BIOMETRIC (UPDATED WITH LIVE CAPTURE SUPPORT)
+============================================================ */
 router.post("/enroll", authenticate, async (req, res) => {
   try {
-    const { 
-      studentId, 
-      biometricData, 
-      deviceInfo, 
+    const {
+      studentId,
+      biometricData,
+      deviceInfo,
       qualityScore,
       scannerModel,
-      templateFormat 
+      templateFormat,
+      useLiveCapture, // Added support
     } = req.body;
 
-    // Validate input
-    if (!studentId || !biometricData) {
+    // Optional live capture
+    let finalBiometricData = biometricData;
+    let finalQualityScore = qualityScore;
+
+    if (useLiveCapture) {
+      logger.info("Using live capture for enrollment");
+      const captureResult = await digitalPersonaService.captureFingerprint();
+
+      if (!captureResult.success) {
+        return res.status(400).json({
+          success: false,
+          message: captureResult.error || "Live capture failed",
+        });
+      }
+
+      finalBiometricData = captureResult.templateData;
+      finalQualityScore = captureResult.qualityScore;
+    }
+
+    if (!studentId || !finalBiometricData) {
       return res.status(400).json({
         success: false,
         message: "Student ID and biometric data are required",
       });
     }
 
-    // Validate template format for Digital Persona
+    // Validate template format (Digital Persona)
     try {
-      const template = JSON.parse(biometricData);
+      const template = JSON.parse(finalBiometricData);
       if (!template.template) {
         return res.status(400).json({
           success: false,
           message: "Invalid biometric template format",
         });
       }
-      
-      // Check if it's Digital Persona format
-      if (template.format !== 'ANSI-378') {
+
+      if (template.format !== "ANSI-378") {
         logger.warn(`Non-standard template format: ${template.format}`);
       }
     } catch (parseError) {
@@ -59,9 +143,9 @@ router.post("/enroll", authenticate, async (req, res) => {
       });
     }
 
-    // Check minimum quality score
+    // Minimum quality
     const minQuality = 60;
-    if (qualityScore && qualityScore < minQuality) {
+    if (finalQualityScore && finalQualityScore < minQuality) {
       return res.status(400).json({
         success: false,
         message: `Quality score too low. Minimum required: ${minQuality}`,
@@ -69,9 +153,9 @@ router.post("/enroll", authenticate, async (req, res) => {
     }
 
     // Encrypt biometric data
-    const encryptedTemplate = encryptBiometric(biometricData);
+    const encryptedTemplate = encryptBiometric(finalBiometricData);
 
-    // Create or update biometric template
+    // Save or update
     const biometricTemplate = await prisma.biometricTemplate.upsert({
       where: {
         studentId_templateType: {
@@ -81,32 +165,36 @@ router.post("/enroll", authenticate, async (req, res) => {
       },
       update: {
         templateData: encryptedTemplate,
-        qualityScore: qualityScore || null,
+        qualityScore: finalQualityScore || null,
         enrollmentDevice: deviceInfo ? JSON.stringify(deviceInfo) : null,
-        scannerModel: scannerModel || 'Digital Persona U.4500',
-        templateFormat: templateFormat || 'ANSI-378',
+        scannerModel: scannerModel || "Digital Persona U.4500",
+        templateFormat: templateFormat || "ANSI-378",
       },
       create: {
         studentId,
         templateData: encryptedTemplate,
         templateType: "FINGERPRINT",
-        qualityScore: qualityScore || null,
+        qualityScore: finalQualityScore || null,
         enrollmentDevice: deviceInfo ? JSON.stringify(deviceInfo) : null,
-        scannerModel: scannerModel || 'Digital Persona U.4500',
-        templateFormat: templateFormat || 'ANSI-378',
+        scannerModel: scannerModel || "Digital Persona U.4500",
+        templateFormat: templateFormat || "ANSI-378",
       },
       include: {
         student: true,
       },
     });
 
-    // Update student's biometric enrollment status
+    // Update enrollment flag
     await prisma.student.update({
       where: { id: studentId },
       data: { biometricEnrolled: true },
     });
 
-    logger.info(`Biometric enrolled for student: ${biometricTemplate.student.matricNumber} using ${scannerModel || 'Digital Persona U.4500'}`);
+    logger.info(
+      `Biometric enrolled for student: ${biometricTemplate.student.matricNumber} using ${
+        scannerModel || "Digital Persona U.4500"
+      }`
+    );
 
     res.json({
       success: true,
@@ -121,20 +209,17 @@ router.post("/enroll", authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Biometric enrollment failed",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 });
 
-// Verify biometric
+/* ============================================================
+   VERIFY BIOMETRIC
+============================================================ */
 router.post("/verify", authenticate, async (req, res) => {
   try {
-    const { 
-      studentId, 
-      biometricData,
-      scannerModel,
-      templateFormat 
-    } = req.body;
+    const { studentId, biometricData, scannerModel, templateFormat } = req.body;
 
     if (!studentId || !biometricData) {
       return res.status(400).json({
@@ -143,7 +228,6 @@ router.post("/verify", authenticate, async (req, res) => {
       });
     }
 
-    // Validate template format
     try {
       const template = JSON.parse(biometricData);
       if (!template.template) {
@@ -159,15 +243,9 @@ router.post("/verify", authenticate, async (req, res) => {
       });
     }
 
-    // Get stored biometric template
     const template = await prisma.biometricTemplate.findFirst({
-      where: {
-        studentId,
-        templateType: "FINGERPRINT",
-      },
-      include: {
-        student: true,
-      },
+      where: { studentId, templateType: "FINGERPRINT" },
+      include: { student: true },
     });
 
     if (!template) {
@@ -177,13 +255,14 @@ router.post("/verify", authenticate, async (req, res) => {
       });
     }
 
-    // Verify biometric
     const { matched, confidence } = verifyBiometric(
       biometricData,
       template.templateData
     );
 
-    logger.info(`Biometric verification: studentId=${studentId}, matched=${matched}, confidence=${confidence}`);
+    logger.info(
+      `Biometric verification: studentId=${studentId}, matched=${matched}, confidence=${confidence}`
+    );
 
     res.json({
       success: true,
@@ -205,12 +284,14 @@ router.post("/verify", authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Biometric verification failed",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 });
 
-// Get biometric status
+/* ============================================================
+   GET BIOMETRIC STATUS
+============================================================ */
 router.get("/status/:studentId", authenticate, async (req, res) => {
   try {
     const { studentId } = req.params;
@@ -240,12 +321,14 @@ router.get("/status/:studentId", authenticate, async (req, res) => {
     const hasFingerprint = student.biometricTemplates.some(
       (template) => template.templateType === "FINGERPRINT"
     );
-    
-    const latestEnrollment = student.biometricTemplates.length > 0
-      ? student.biometricTemplates.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )[0]
-      : null;
+
+    const latestEnrollment =
+      student.biometricTemplates.length > 0
+        ? student.biometricTemplates.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )[0]
+        : null;
 
     res.json({
       success: true,
@@ -267,30 +350,30 @@ router.get("/status/:studentId", authenticate, async (req, res) => {
   }
 });
 
-// Delete biometric
+/* ============================================================
+   DELETE BIOMETRIC DATA
+============================================================ */
 router.delete("/:studentId", authenticate, async (req, res) => {
   try {
     const { studentId } = req.params;
 
-    // Delete biometric templates
     const deletedCount = await prisma.biometricTemplate.deleteMany({
       where: { studentId },
     });
 
-    // Update student's biometric enrollment status
     await prisma.student.update({
       where: { id: studentId },
       data: { biometricEnrolled: false },
     });
 
-    logger.info(`Deleted ${deletedCount.count} biometric templates for student: ${studentId}`);
+    logger.info(
+      `Deleted ${deletedCount.count} biometric templates for student: ${studentId}`
+    );
 
     res.json({
       success: true,
       message: "Biometric data deleted successfully",
-      data: {
-        deletedTemplates: deletedCount.count,
-      },
+      data: { deletedTemplates: deletedCount.count },
     });
   } catch (error) {
     logger.error("Delete biometric error:", error);
@@ -301,17 +384,17 @@ router.delete("/:studentId", authenticate, async (req, res) => {
   }
 });
 
-// Test endpoint - check Digital Persona device connectivity
+/* ============================================================
+   TEST ENDPOINT - DEVICE CAPABILITIES
+============================================================ */
 router.get("/test/device", authenticate, async (req, res) => {
   try {
-    // This is a server-side check
-    // Actual device check happens on client side
     res.json({
       success: true,
       message: "Device check endpoint available",
       data: {
-        supportedScanners: ['Digital Persona U.4500'],
-        supportedFormats: ['ANSI-378'],
+        supportedScanners: ["Digital Persona U.4500"],
+        supportedFormats: ["ANSI-378"],
         minQualityScore: 60,
         matchThreshold: 75,
       },
