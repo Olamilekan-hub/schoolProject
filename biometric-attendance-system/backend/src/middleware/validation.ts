@@ -65,12 +65,13 @@ export const validateAttendanceSession = validate(Joi.object({
   allowRemoteMarking: Joi.boolean().default(false)
 }))
 
-// Mark attendance validation
+// Mark attendance validation - ✅ FIXED
 export const validateMarkAttendance = validate(Joi.object({
   sessionId: Joi.string().required(),
   studentId: Joi.string().required(),
   biometricData: Joi.string().optional(),
   verificationMethod: Joi.string().valid('BIOMETRIC', 'MANUAL', 'LINK').default('MANUAL'),
+  verificationConfidence: Joi.number().min(0).max(100).optional(), // ✅ ADDED THIS LINE
   deviceInfo: Joi.object().optional(),
   remarks: Joi.string().optional().allow('')
 }))

@@ -261,7 +261,7 @@ router.post("/mark", authenticate, validateMarkAttendance, async (req, res) => {
     let biometricVerified = false;
     let finalConfidence = verificationConfidence || null;
 
-    if (biometricData && verificationMethod === 'BIOMETRIC') {
+    if (biometricData && verificationMethod === 'BIOMETRIC' && !verificationConfidence) {
       logger.info(`🔍 Performing biometric verification for attendance marking...`);
       
       try {
@@ -310,12 +310,18 @@ router.post("/mark", authenticate, validateMarkAttendance, async (req, res) => {
 
       } catch (verifyError: any) {
         logger.error('❌ Verification error during attendance marking:', verifyError);
-        return res.status(500).json({
+        return res.status(500).json({ 
           success: false,
           message: 'Biometric verification failed: ' + verifyError.message,
         });
       }
-    }
+    } else if (verificationConfidence && verificationMethod === 'BIOMETRIC') {
+  // Trust frontend verification
+  biometricVerified = true;
+  finalConfidence = verificationConfidence;
+  
+  logger.info(`✓ Using frontend verification result: ${finalConfidence.toFixed(2)}%`);
+}
 
     // ✅ Create attendance record
     const attendanceRecord = await prisma.attendanceRecord.create({

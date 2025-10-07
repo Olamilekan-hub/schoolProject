@@ -237,7 +237,7 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
 
           await processAttendanceMarking(
             selectedStudent.id,
-            verificationPayload,  // ← Use formatted payload
+            undefined,  // ← Use formatted payload
             'BIOMETRIC',
             verificationResult.confidence
           )
