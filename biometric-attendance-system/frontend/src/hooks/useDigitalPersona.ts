@@ -1,5 +1,5 @@
 // frontend/src/hooks/useDigitalPersona.ts
-// COMPLETE WORKING VERSION
+// FIXED VERSION - Dynamic Quality Scores
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { FingerprintReader, SampleFormat } from '@digitalpersona/devices'
@@ -78,22 +78,53 @@ export const useDigitalPersona = (): UseDigitalPersonaReturn => {
               return
             }
 
-            // ✅ FIX: Handle -1 quality score from Digital Persona
+            // ✅ FIX: Get actual quality from device or calculate from data quality
             const rawQuality = sample.Header?.Quality || -1
-            const actualQuality = rawQuality === -1 ? 85 : rawQuality // Default to 85 if unavailable
+            
+            // If device doesn't provide quality, use a reasonable estimate based on data
+            // Digital Persona often returns -1 when quality metrics aren't available
+            let actualQuality: number
+            
+            if (rawQuality !== -1 && rawQuality >= 0 && rawQuality <= 100) {
+              // Use device-provided quality if available
+              actualQuality = rawQuality
+            } else {
+              // Estimate quality based on template data length and completeness
+              // Longer templates generally indicate better captures
+              const minLength = 300  // Minimum expected template length
+              const maxLength = 600  // Maximum typical template length
+              const dataLength = biometricData.length
+              
+              // Calculate quality score based on data completeness (60-100 range)
+              if (dataLength < minLength) {
+                actualQuality = 60 + Math.floor((dataLength / minLength) * 30)
+              } else if (dataLength > maxLength) {
+                actualQuality = 95
+              } else {
+                actualQuality = 60 + Math.floor(((dataLength - minLength) / (maxLength - minLength)) * 35)
+              }
+              
+              console.warn('⚠️ Quality unavailable from device, estimated from data:', actualQuality)
+            }
 
             console.log('📊 Quality score handling:', {
               rawQuality: rawQuality,
               finalQuality: actualQuality,
-              isUnavailable: rawQuality === -1
+              dataLength: biometricData.length,
+              isEstimated: rawQuality === -1
             })
+
+            // ✅ FIX: Calculate confidence based on quality
+            // Higher quality scans = higher confidence
+            // Quality ranges: 0-59 = Poor, 60-74 = Fair, 75-89 = Good, 90-100 = Excellent
+            const confidence = Math.min(100, Math.floor(actualQuality * 1.05)) // Slight boost for confidence
 
             const templateData = JSON.stringify({
               template: biometricData,
               format: 'ANSI-378',
               metadata: {
-                quality: actualQuality,  // ← Use processed quality
-                qualityUnavailable: rawQuality === -1,  // ← Flag for tracking
+                quality: actualQuality,
+                qualityUnavailable: rawQuality === -1,
                 type: sample.Header?.Type || 2,
                 version: sample.Version || 1,
                 deviceId: event.deviceId,
@@ -101,9 +132,10 @@ export const useDigitalPersona = (): UseDigitalPersonaReturn => {
               }
             })
 
-            console.log('✅ Template with quality fix:', {
+            console.log('✅ Template created:', {
               rawTemplateLength: biometricData.length,
               quality: actualQuality,
+              confidence: confidence,
               format: 'ANSI-378'
             })
 
@@ -111,8 +143,8 @@ export const useDigitalPersona = (): UseDigitalPersonaReturn => {
               success: true,
               message: 'Fingerprint captured successfully',
               templateData: templateData,
-              qualityScore: actualQuality,  // ← Use processed quality
-              confidence: 95,
+              qualityScore: actualQuality,  // ✅ Dynamic quality
+              confidence: confidence,        // ✅ Dynamic confidence based on quality
               deviceInfo: deviceInfo
             })
 
@@ -276,11 +308,10 @@ export const useDigitalPersona = (): UseDigitalPersonaReturn => {
           try {
             const parsed = JSON.parse(result.templateData)
 
-            // Debug: Check what we're getting
             console.log(`🔍 Scan ${i + 1} parsed:`, {
               hasTemplate: !!parsed.template,
-              templateType: typeof parsed.template,
               templateLength: parsed.template?.length,
+              quality: parsed.metadata?.quality,
               format: parsed.format
             })
 
@@ -293,7 +324,7 @@ export const useDigitalPersona = (): UseDigitalPersonaReturn => {
             }
 
             templates.push(parsed.template)
-            qualities.push(parsed.metadata?.quality || 90)
+            qualities.push(parsed.metadata?.quality || 70) // Use actual quality or fallback to 70
           } catch (parseError) {
             console.error('❌ Failed to parse template data:', parseError)
             return {
@@ -312,10 +343,12 @@ export const useDigitalPersona = (): UseDigitalPersonaReturn => {
       // Use the best quality template
       const bestIndex = qualities.indexOf(Math.max(...qualities))
       const bestTemplate = templates[bestIndex]
+      const averageQuality = Math.round(qualities.reduce((a, b) => a + b, 0) / qualities.length)
 
       console.log('📊 All scans complete:', {
         totalScans: templates.length,
         qualities: qualities,
+        averageQuality: averageQuality,
         bestIndex: bestIndex,
         bestQuality: qualities[bestIndex],
         bestTemplateLength: bestTemplate.length
@@ -323,29 +356,35 @@ export const useDigitalPersona = (): UseDigitalPersonaReturn => {
 
       // Create final enrollment data
       const enrollmentData = JSON.stringify({
-        template: bestTemplate,  // Single best template
+        template: bestTemplate,
         format: 'ANSI-378',
         metadata: {
           userId: userId,
           scanCount: requiredScans,
           allQualities: qualities,
           bestQuality: qualities[bestIndex],
+          averageQuality: averageQuality,
           enrollmentDate: new Date().toISOString()
         }
       })
 
-      // Debug: Verify final enrollment data structure
       const finalCheck = JSON.parse(enrollmentData)
       console.log('🔍 Final enrollment data check:', {
         hasTemplate: !!finalCheck.template,
-        templateType: typeof finalCheck.template,
         templateLength: finalCheck.template?.length,
+        bestQuality: qualities[bestIndex],
+        averageQuality: averageQuality,
         format: finalCheck.format
       })
+
+      // ✅ FIX: Use actual quality scores, not hardcoded 100
+      const finalConfidence = Math.min(100, Math.floor(averageQuality * 1.05))
 
       console.log('✅ Enrollment complete:', {
         scans: requiredScans,
         bestQuality: qualities[bestIndex],
+        averageQuality: averageQuality,
+        confidence: finalConfidence,
         finalDataLength: enrollmentData.length
       })
 
@@ -353,8 +392,8 @@ export const useDigitalPersona = (): UseDigitalPersonaReturn => {
         success: true,
         message: `Enrollment completed with ${requiredScans} scans`,
         templateData: enrollmentData,
-        qualityScore: qualities[bestIndex],
-        confidence: 100,
+        qualityScore: averageQuality,     // ✅ Use actual average quality
+        confidence: finalConfidence,       // ✅ Calculate from quality
         deviceInfo: deviceInfo
       }
     } catch (err: any) {
