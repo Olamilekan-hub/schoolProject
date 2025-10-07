@@ -32,16 +32,40 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
 
   const handleScanResult = (result: BiometricScanResult) => {
     if (result.success && result.templateData) {
-      // Store this scan
+      try {
+        const parsed = JSON.parse(result.templateData)
+        if (!parsed.template) {
+          toast.error('Invalid template structure - missing template key')
+          return
+        }
+
+        // ✅ FIX: Use actual quality or default
+        const quality = result.qualityScore && result.qualityScore > 0
+          ? result.qualityScore
+          : 85  // Default quality if unavailable
+
+        console.log(`✅ Scan ${scansCompleted + 1} valid:`, {
+          hasTemplate: true,
+          templateLength: parsed.template.length,
+          quality: quality,
+          qualitySource: result.qualityScore && result.qualityScore > 0 ? 'device' : 'default',
+          format: parsed.format
+        })
+
+      } catch (e) {
+        toast.error('Failed to parse template data')
+        return
+      }
+
       setAllScans(prev => [...prev, result.templateData!])
       setBiometricData(result)
       setScansCompleted(prev => prev + 1)
-      
+
       if (scansCompleted + 1 >= requiredScans) {
         setEnrollmentStep('confirm')
         toast.success(`All ${requiredScans} scans completed successfully!`)
       } else {
-        toast.success(`Scan ${scansCompleted + 1} of ${requiredScans} completed. Place your finger again for scan ${scansCompleted + 2}.`)
+        toast.success(`Scan ${scansCompleted + 1} of ${requiredScans} completed.`)
       }
     } else {
       toast.error(result.message)
@@ -56,35 +80,95 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
 
     setIsEnrolling(true)
     try {
-      // Combine all scans into enrollment data
+      const rawTemplates: string[] = []
+      const qualities: number[] = []
+
+      for (let i = 0; i < allScans.length; i++) {
+        try {
+          const scanData = JSON.parse(allScans[i])
+
+          if (!scanData.template) {
+            throw new Error(`Scan ${i + 1} missing template`)
+          }
+
+          rawTemplates.push(scanData.template)
+
+          // ✅ FIX: Handle missing quality properly
+          const scanQuality = scanData.metadata?.quality || 85
+          qualities.push(scanQuality)
+
+          console.log(`✅ Scan ${i + 1} processed:`, {
+            templateLength: scanData.template.length,
+            quality: scanQuality,
+            qualityAvailable: !!scanData.metadata?.quality
+          })
+        } catch (parseError) {
+          console.error(`❌ Failed to parse scan ${i + 1}:`, parseError)
+          toast.error(`Invalid scan data at scan ${i + 1}`)
+          return
+        }
+      }
+
+      // Use best quality OR first template if all qualities are same
+      const bestQuality = Math.max(...qualities)
+      const bestIndex = qualities.indexOf(bestQuality)
+      const primaryTemplate = rawTemplates[bestIndex]
+
+      console.log('📊 Final enrollment data:', {
+        totalScans: rawTemplates.length,
+        qualities: qualities,
+        bestIndex: bestIndex,
+        bestQuality: bestQuality,
+        primaryTemplateLength: primaryTemplate.length,
+        allQualitiesSame: qualities.every(q => q === qualities[0])
+      })
+
+      // ✅ Create enrollment payload with proper quality
       const enrollmentData: BiometricEnrollmentData = {
         studentId: student.id,
         biometricData: JSON.stringify({
-          scans: allScans,
-          scanCount: requiredScans,
-          finalTemplate: biometricData.templateData
+          template: primaryTemplate,
+          format: 'ANSI-378',
+          metadata: {
+            scanCount: requiredScans,
+            qualities: qualities,
+            bestQuality: bestQuality,
+            enrollmentDate: new Date().toISOString(),
+            allTemplates: rawTemplates,
+            qualityNote: qualities.every(q => q === 85)
+              ? 'Device does not provide quality scores - using default'
+              : 'Quality scores from device'
+          }
         }),
         deviceInfo: biometricData.deviceInfo,
-        qualityScore: biometricData.qualityScore,
+        qualityScore: bestQuality,
       }
 
+      console.log('📤 Sending to backend:', {
+        studentId: student.id,
+        qualityScore: bestQuality,
+        templateLength: primaryTemplate.length
+      })
+
       const updatedStudent = await biometricService.enrollBiometric(enrollmentData)
-      
+
       setEnrollmentStep('complete')
       toast.success('Biometric enrollment completed successfully!')
-      
+
       setTimeout(() => {
         onEnrollmentComplete(updatedStudent)
         onClose()
         resetEnrollment()
       }, 2000)
     } catch (error: any) {
+      console.error('❌ Enrollment error:', error)
       toast.error(error.message || 'Enrollment failed')
       setEnrollmentStep('scan')
     } finally {
       setIsEnrolling(false)
     }
   }
+
 
   const resetEnrollment = () => {
     setEnrollmentStep('info')
@@ -112,7 +196,7 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
             <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-primary-100">
               <User className="w-8 h-8 text-primary-600" />
             </div>
-            
+
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
                 Digital Persona Biometric Enrollment
@@ -167,8 +251,8 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
               <Button variant="secondary" onClick={handleClose} fullWidth>
                 Cancel
               </Button>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 onClick={() => setEnrollmentStep('scan')}
                 fullWidth
               >
@@ -192,13 +276,12 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
                 {Array.from({ length: requiredScans }).map((_, index) => (
                   <div
                     key={index}
-                    className={`w-4 h-4 rounded-full transition-all ${
-                      index < scansCompleted 
-                        ? 'bg-success-500 scale-110' 
-                        : index === scansCompleted
+                    className={`w-4 h-4 rounded-full transition-all ${index < scansCompleted
+                      ? 'bg-success-500 scale-110'
+                      : index === scansCompleted
                         ? 'bg-primary-500 animate-pulse'
                         : 'bg-gray-300'
-                    }`}
+                      }`}
                   />
                 ))}
               </div>
@@ -232,8 +315,8 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
                 Cancel
               </Button>
               {scansCompleted > 0 && scansCompleted < requiredScans && (
-                <Button 
-                  variant="warning" 
+                <Button
+                  variant="warning"
                   onClick={() => {
                     setScansCompleted(0)
                     setAllScans([])
@@ -255,7 +338,7 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
             <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-success-100">
               <CheckCircle className="w-8 h-8 text-success-600" />
             </div>
-            
+
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
                 Confirm Enrollment
@@ -294,7 +377,7 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
                     </p>
                   </div>
                 </div>
-                
+
                 {biometricData.deviceInfo && (
                   <div className="p-3 mt-3 text-xs text-gray-600 bg-white rounded">
                     <p><strong>Device Info:</strong></p>
@@ -311,14 +394,14 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
             <div className="p-4 text-sm text-green-800 rounded-lg bg-green-50">
               <p className="mb-2 font-medium">Ready to complete enrollment</p>
               <p>
-                The biometric template will be encrypted and securely stored. 
+                The biometric template will be encrypted and securely stored.
                 The student will be able to mark attendance using this enrolled fingerprint.
               </p>
             </div>
 
             <div className="flex space-x-4">
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 onClick={() => {
                   setEnrollmentStep('scan')
                   setScansCompleted(0)
@@ -329,8 +412,8 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
               >
                 Scan Again
               </Button>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 onClick={handleEnrollment}
                 loading={isEnrolling}
                 fullWidth
@@ -347,7 +430,7 @@ const DigitalPersonaEnrollment: React.FC<DigitalPersonaEnrollmentProps> = ({
             <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-success-100 animate-bounce">
               <CheckCircle className="w-8 h-8 text-success-600" />
             </div>
-            
+
             <div>
               <h3 className="text-lg font-semibold text-success-900">
                 Enrollment Complete!

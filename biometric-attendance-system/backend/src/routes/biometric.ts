@@ -20,11 +20,11 @@ router.get("/device/status", authenticate, async (req, res) => {
         installed: status.installed,
         deviceInfo: status.connected
           ? {
-              name: status.model || "Digital Persona U.are.U 4500",
-              manufacturer: "HID Global",
-              model: status.model || "U.are.U 4500",
-              type: "FINGERPRINT",
-            }
+            name: status.model || "Digital Persona U.are.U 4500",
+            manufacturer: "HID Global",
+            model: status.model || "U.are.U 4500",
+            type: "FINGERPRINT",
+          }
           : null,
       },
     });
@@ -191,8 +191,7 @@ router.post("/enroll", authenticate, async (req, res) => {
     });
 
     logger.info(
-      `Biometric enrolled for student: ${biometricTemplate.student.matricNumber} using ${
-        scannerModel || "Digital Persona U.4500"
+      `Biometric enrolled for student: ${biometricTemplate.student.matricNumber} using ${scannerModel || "Digital Persona U.4500"
       }`
     );
 
@@ -228,40 +227,70 @@ router.post("/verify", authenticate, async (req, res) => {
       });
     }
 
+    // ✅ Validate incoming template structure
+    let liveTemplate;
     try {
-      const template = JSON.parse(biometricData);
-      if (!template.template) {
+      const parsed = JSON.parse(biometricData);
+      if (!parsed.template || !parsed.format) {
         return res.status(400).json({
           success: false,
-          message: "Invalid biometric template format",
+          message: "Invalid biometric template format - must include 'template' and 'format' keys",
         });
       }
+      liveTemplate = parsed.template;
+
+      logger.info('📥 Live template received for verification:', {
+        studentId: studentId,
+        format: parsed.format,
+        templateLength: liveTemplate.length,
+        quality: parsed.metadata?.quality || 'unknown'
+      });
+
     } catch (parseError) {
+      logger.error('❌ JSON parse failed:', parseError);
       return res.status(400).json({
         success: false,
-        message: "Invalid biometric template data",
+        message: "Invalid biometric template data - must be valid JSON",
       });
     }
 
-    const template = await prisma.biometricTemplate.findFirst({
+    // ✅ Fetch stored encrypted template from database
+    const storedTemplate = await prisma.biometricTemplate.findFirst({
       where: { studentId, templateType: "FINGERPRINT" },
       include: { student: true },
     });
 
-    if (!template) {
+    if (!storedTemplate) {
       return res.status(404).json({
         success: false,
-        message: "No biometric template found for this student",
+        message: "No biometric template found for this student. Please enroll first.",
       });
     }
 
+    logger.info('📤 Stored template retrieved from database:', {
+      studentId: studentId,
+      matricNumber: storedTemplate.student.matricNumber,
+      studentName: `${storedTemplate.student.firstName} ${storedTemplate.student.lastName}`,
+      templateFormat: storedTemplate.templateFormat,
+      scannerModel: storedTemplate.scannerModel,
+      enrolledAt: storedTemplate.createdAt
+    });
+
+    // ✅ Perform verification using enhanced algorithm
     const { matched, confidence } = verifyBiometric(
-      biometricData,
-      template.templateData
+      biometricData, // Full JSON with template and metadata
+      storedTemplate.templateData // Encrypted stored template
     );
 
+    // Log detailed verification result
     logger.info(
-      `Biometric verification: studentId=${studentId}, matched=${matched}, confidence=${confidence}`
+      `🔐 Biometric verification complete:\n` +
+      `  Student ID: ${studentId}\n` +
+      `  Matric No: ${storedTemplate.student.matricNumber}\n` +
+      `  Student: ${storedTemplate.student.firstName} ${storedTemplate.student.lastName}\n` +
+      `  Result: ${matched ? '✅ MATCHED' : '❌ NOT MATCHED'}\n` +
+      `  Confidence: ${confidence.toFixed(2)}%\n` +
+      `  Threshold: ${process.env.BIOMETRIC_CONFIDENCE_THRESHOLD || 75}%`
     );
 
     res.json({
@@ -270,17 +299,22 @@ router.post("/verify", authenticate, async (req, res) => {
         matched,
         confidence,
         studentId,
-        templateId: template.id,
+        templateId: storedTemplate.id,
         student: {
-          id: template.student.id,
-          matricNumber: template.student.matricNumber,
-          firstName: template.student.firstName,
-          lastName: template.student.lastName,
+          id: storedTemplate.student.id,
+          matricNumber: storedTemplate.student.matricNumber,
+          firstName: storedTemplate.student.firstName,
+          lastName: storedTemplate.student.lastName,
         },
+        verificationDetails: {
+          timestamp: new Date().toISOString(),
+          scannerModel: scannerModel || 'Digital Persona U.4500',
+          templateFormat: templateFormat || 'ANSI-378'
+        }
       },
     });
-  } catch (error) {
-    logger.error("Biometric verification error:", error);
+  } catch (error: any) {
+    logger.error("❌ Biometric verification error:", error);
     res.status(500).json({
       success: false,
       message: "Biometric verification failed",
@@ -325,9 +359,9 @@ router.get("/status/:studentId", authenticate, async (req, res) => {
     const latestEnrollment =
       student.biometricTemplates.length > 0
         ? student.biometricTemplates.sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )[0]
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0]
         : null;
 
     res.json({

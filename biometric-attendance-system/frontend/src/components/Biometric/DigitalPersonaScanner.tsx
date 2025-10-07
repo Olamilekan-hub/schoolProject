@@ -263,12 +263,12 @@ const DigitalPersonaScanner: React.FC<BiometricScannerProps> = ({
   /** 🔹 If not supported (SDK missing) */
   if (!isSupported) {
     return (
-      <div className="p-6 border-2 rounded-lg border-yellow-300 bg-yellow-50">
+      <div className="p-6 border-2 border-yellow-300 rounded-lg bg-yellow-50">
         <AlertCircle className="w-10 h-10 mx-auto mb-4 text-yellow-600" />
-        <p className="text-center font-medium text-yellow-800 mb-2">
+        <p className="mb-2 font-medium text-center text-yellow-800">
           DigitalPersona SDK Not Detected
         </p>
-        <ol className="text-sm list-decimal list-inside text-yellow-700 space-y-1">
+        <ol className="space-y-1 text-sm text-yellow-700 list-decimal list-inside">
           <li>Install Lite Client from https://crossmatch.hid.gl/lite-client</li>
           <li>Ensure /modules/WebSdk/index.js is loaded</li>
           <li>Refresh this page</li>
@@ -311,14 +311,14 @@ const DigitalPersonaScanner: React.FC<BiometricScannerProps> = ({
 
         {/* Not Connected */}
         {!isConnected && (
-          <div className="p-3 mb-4 text-sm text-red-800 bg-red-50 rounded-lg">
+          <div className="p-3 mb-4 text-sm text-red-800 rounded-lg bg-red-50">
             <XCircle className="inline w-4 h-4 mr-1" />
             Device not connected — connect Digital Persona U.4500
             <Button
               size="sm"
               variant="secondary"
               onClick={handleRefreshDevice}
-              className="flex items-center mt-2 space-x-1 mx-auto"
+              className="flex items-center mx-auto mt-2 space-x-1"
             >
               <RefreshCw className="w-3 h-3" />
               <span>Check Connection</span>
@@ -327,7 +327,7 @@ const DigitalPersonaScanner: React.FC<BiometricScannerProps> = ({
         )}
 
         {/* Action Buttons */}
-        <div className="flex justify-center space-x-4 mt-4">
+        <div className="flex justify-center mt-4 space-x-4">
           {scannerState === "idle" && (
             <Button
               onClick={() =>

@@ -49,6 +49,7 @@ export default defineConfig({
       '@/utils': path.resolve(__dirname, './src/utils'),
       '@/types': path.resolve(__dirname, './src/types'),
       '@/context': path.resolve(__dirname, './src/context'),
+      WebSdk: path.resolve(__dirname, 'src/shims/websdk-shim.js'),
     },
   },
   css: {
@@ -77,6 +78,8 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     rollupOptions: {
+      
+      external: ['WebSdk'],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
@@ -87,6 +90,16 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
+    exclude: ['WebSdk'],
     include: ['react', 'react-dom', 'react-router-dom', 'axios'],
   },
 })
+
+
+  // optimizeDeps: { // avoid dependency optimization error
+  // },
+  // build: {
+  //   outDir: 'dist',
+  //   sourcemap: true,
+  //   rollupOptions: {
+  //     external: ['WebSdk'], // avoid bundling WebSdk

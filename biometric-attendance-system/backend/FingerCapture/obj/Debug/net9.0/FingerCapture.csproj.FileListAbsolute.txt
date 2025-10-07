@@ -1,0 +1,15 @@
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\bin\Debug\net9.0\FingerCapture.exe
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\bin\Debug\net9.0\FingerCapture.deps.json
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\bin\Debug\net9.0\FingerCapture.runtimeconfig.json
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\bin\Debug\net9.0\FingerCapture.dll
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\bin\Debug\net9.0\FingerCapture.pdb
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\obj\Debug\net9.0\FingerCapture.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\obj\Debug\net9.0\FingerCapture.AssemblyInfoInputs.cache
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\obj\Debug\net9.0\FingerCapture.AssemblyInfo.cs
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\obj\Debug\net9.0\FingerCapture.csproj.CoreCompileInputs.cache
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\obj\Debug\net9.0\FingerCapture.sourcelink.json
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\obj\Debug\net9.0\FingerCapture.dll
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\obj\Debug\net9.0\refint\FingerCapture.dll
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\obj\Debug\net9.0\FingerCapture.pdb
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\obj\Debug\net9.0\FingerCapture.genruntimeconfig.cache
+C:\Users\user\Desktop\Sources\schoolProject\biometric-attendance-system\backend\FingerCapture\obj\Debug\net9.0\ref\FingerCapture.dll

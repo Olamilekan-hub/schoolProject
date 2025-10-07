@@ -204,17 +204,21 @@ router.post("/mark", authenticate, validateMarkAttendance, async (req, res) => {
       studentId,
       biometricData,
       verificationMethod = "MANUAL",
+      verificationConfidence,
       deviceInfo,
       remarks,
     } = req.body;
 
-    // Check if session exists and belongs to teacher
+    // Validate session exists and is open
     const session = await prisma.attendanceSession.findFirst({
       where: {
         id: sessionId,
         teacherId: req.user!.id,
         status: "OPEN",
       },
+      include: {
+        course: true
+      }
     });
 
     if (!session) {
@@ -224,7 +228,7 @@ router.post("/mark", authenticate, validateMarkAttendance, async (req, res) => {
       });
     }
 
-    // Check if student exists
+    // Validate student exists
     const student = await prisma.student.findUnique({
       where: { id: studentId },
     });
@@ -249,41 +253,137 @@ router.post("/mark", authenticate, validateMarkAttendance, async (req, res) => {
     if (existingRecord) {
       return res.status(400).json({
         success: false,
-        message: "Attendance already marked for this student",
+        message: "Attendance already marked for this student in this session",
       });
     }
 
-    // Mark attendance
+    // ✅ Biometric verification if provided
+    let biometricVerified = false;
+    let finalConfidence = verificationConfidence || null;
+
+    if (biometricData && verificationMethod === 'BIOMETRIC') {
+      logger.info(`🔍 Performing biometric verification for attendance marking...`);
+      
+      try {
+        // Get stored template
+        const storedTemplate = await prisma.biometricTemplate.findFirst({
+          where: { studentId, templateType: 'FINGERPRINT' }
+        });
+
+        if (!storedTemplate) {
+          return res.status(400).json({
+            success: false,
+            message: `Student ${student.matricNumber} is not enrolled for biometric attendance`,
+          });
+        }
+
+        // Verify the fingerprint
+        const verification = verifyBiometric(
+          biometricData,
+          storedTemplate.templateData
+        );
+
+        biometricVerified = verification.matched;
+        finalConfidence = verification.confidence;
+
+        logger.info(
+          `🔐 Attendance verification result:\n` +
+          `  Student: ${student.firstName} ${student.lastName} (${student.matricNumber})\n` +
+          `  Session: ${session.sessionName}\n` +
+          `  Course: ${session.course.courseCode}\n` +
+          `  Verified: ${biometricVerified ? '✅ YES' : '❌ NO'}\n` +
+          `  Confidence: ${finalConfidence.toFixed(2)}%`
+        );
+
+        // Reject if verification failed
+        if (!biometricVerified) {
+          return res.status(403).json({
+            success: false,
+            message: `Biometric verification failed. Confidence: ${finalConfidence.toFixed(1)}%. Please try again or contact your instructor.`,
+            data: {
+              verified: false,
+              confidence: finalConfidence,
+              threshold: process.env.BIOMETRIC_CONFIDENCE_THRESHOLD || 75
+            }
+          });
+        }
+
+      } catch (verifyError: any) {
+        logger.error('❌ Verification error during attendance marking:', verifyError);
+        return res.status(500).json({
+          success: false,
+          message: 'Biometric verification failed: ' + verifyError.message,
+        });
+      }
+    }
+
+    // ✅ Create attendance record
     const attendanceRecord = await prisma.attendanceRecord.create({
       data: {
         sessionId: session.id,
         studentId,
         status: "PRESENT",
         verificationMethod,
-        biometricVerified: !!biometricData,
-        verificationConfidence: biometricData ? Math.random() * 20 + 80 : null,
+        biometricVerified,
+        verificationConfidence: finalConfidence,
         ipAddress: req.ip,
         userAgent: req.get("User-Agent"),
+        remarks,
       },
       include: {
         student: true,
+        session: {
+          include: {
+            course: true
+          }
+        }
       },
     });
 
+    // Emit real-time update
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("attendance_marked", {
+        sessionId: session.id,
+        studentId: student.id,
+        studentName: `${student.firstName} ${student.lastName}`,
+        matricNumber: student.matricNumber,
+        method: verificationMethod,
+        verified: biometricVerified,
+        confidence: finalConfidence,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     logger.info(
-      `Remote attendance marked: ${student.matricNumber} for session ${session.id}`
+      `✅ Attendance marked successfully:\n` +
+      `  Student: ${student.firstName} ${student.lastName} (${student.matricNumber})\n` +
+      `  Session: ${session.sessionName}\n` +
+      `  Course: ${session.course.courseCode}\n` +
+      `  Method: ${verificationMethod}\n` +
+      `  Biometric Verified: ${biometricVerified}\n` +
+      `  Confidence: ${finalConfidence ? finalConfidence.toFixed(2) + '%' : 'N/A'}\n` +
+      `  Time: ${new Date().toISOString()}`
     );
 
     res.json({
       success: true,
       message: `Attendance marked successfully for ${student.firstName} ${student.lastName}`,
-      data: attendanceRecord,
+      data: {
+        record: attendanceRecord,
+        verification: {
+          method: verificationMethod,
+          biometricVerified,
+          confidence: finalConfidence
+        }
+      },
     });
-  } catch (error) {
-    logger.error("Mark attendance by link error:", error);
+  } catch (error: any) {
+    logger.error("❌ Mark attendance error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to mark attendance",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined
     });
   }
 });

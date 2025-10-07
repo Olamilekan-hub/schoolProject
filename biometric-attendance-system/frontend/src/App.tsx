@@ -1,5 +1,6 @@
 // src/App.tsx - UPDATED WITH BIOMETRIC TEST ROUTE
 import React from 'react'
+import { useEffect } from "react"
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
@@ -24,6 +25,9 @@ import NotFound from './pages/NotFound'
 // Test Components
 import BiometricTest from './components/Test/BiometricTest'
 
+
+import { loadWebSdk } from "./utils/loadWebSdk";
+
 // Styles
 import './index.css'
 
@@ -42,6 +46,19 @@ const queryClient = new QueryClient({
 })
 
 function App() {
+
+  useEffect(() => {
+    (async () => {
+      try {
+        await loadWebSdk();
+        console.log("WebSdk loaded successfully!");
+      } catch (err) {
+        console.error("efuiqe", err);
+      }
+    })();
+  }, []);
+
+  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

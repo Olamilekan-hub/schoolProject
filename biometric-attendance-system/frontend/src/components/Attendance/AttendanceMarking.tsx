@@ -1,15 +1,17 @@
 // src/components/Attendance/AttendanceMarking.tsx
+// ✅ UPDATED IMPORTS - Replace FingerprintScanner with DigitalPersonaScanner
 import React, { useState, useEffect } from 'react'
-import { 
-  ArrowLeft, 
-  Users, 
+import {
+  ArrowLeft,
+  Users,
   UserCheck,
   Fingerprint,
   Clock,
   CheckCircle,
   AlertCircle,
   RefreshCw,
-  User
+  User,
+  Shield
 } from 'lucide-react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -26,8 +28,9 @@ import Table from '../UI/Table'
 import Badge from '../UI/Badge'
 import Modal from '../UI/Modal'
 import LoadingSpinner from '../UI/LoadingSpinner'
-import FingerprintScanner from '../Biometric/FingerprintScanner'
+import DigitalPersonaScanner from '../Biometric/DigitalPersonaScanner' // ✅ CHANGED
 import type { BiometricScanResult } from '../../types/biometric'
+import { biometricService } from '../../services/biometric' // ✅ ADDED for verification
 
 interface AttendanceMarkingProps {
   session: AttendanceSession
@@ -45,12 +48,13 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
   const [showManualModal, setShowManualModal] = useState(false)
   const [markingMethod, setMarkingMethod] = useState<'biometric' | 'manual'>('biometric')
   const [isMarking, setIsMarking] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false) // ✅ NEW
 
   // Data fetching
   const { data: enrolledStudents, isLoading: studentsLoading } = useStudents({
     courseId: session.courseId
   })
-  
+
   const { data: attendanceRecords, refetch: refetchRecords } = useSessionRecords(session.id)
   const { mutate: markAttendance } = useMarkAttendance()
 
@@ -65,23 +69,21 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
 
   // Filter students based on search and attendance status
   const availableStudents = enrolledStudents?.filter(student => {
-    // Filter out students who have already marked attendance
     const hasAttended = attendanceRecords?.some(record => record.studentId === student.id)
     if (hasAttended) return false
 
-    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       const fullName = `${student.firstName} ${student.lastName}`.toLowerCase()
       const matricNumber = student.matricNumber.toLowerCase()
-      
+
       return fullName.includes(query) || matricNumber.includes(query)
     }
 
     return true
   }) || []
 
-  const presentStudents = attendanceRecords?.filter(record => 
+  const presentStudents = attendanceRecords?.filter(record =>
     record.status === 'PRESENT'
   ) || []
 
@@ -92,8 +94,8 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
       header: 'Student',
       render: (student: Student) => (
         <div className="flex items-center space-x-3">
-          <div className="h-10 w-10 bg-gray-300 rounded-full flex items-center justify-center">
-            <User className="h-5 w-5 text-gray-600" />
+          <div className="flex items-center justify-center w-10 h-10 bg-gray-300 rounded-full">
+            <User className="w-5 h-5 text-gray-600" />
           </div>
           <div>
             <p className="text-sm font-medium text-gray-900">
@@ -120,7 +122,7 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
       key: 'biometric',
       header: 'Biometric Status',
       render: (student: Student) => (
-        <Badge 
+        <Badge
           variant={student.biometricEnrolled ? 'success' : 'warning'}
           size="sm"
         >
@@ -139,7 +141,7 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
               onClick={() => handleBiometricMarking(student)}
               className="flex items-center space-x-1"
             >
-              <Fingerprint className="h-3 w-3" />
+              <Fingerprint className="w-3 h-3" />
               <span>Biometric</span>
             </Button>
           ) : (
@@ -149,7 +151,7 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
               onClick={() => handleManualMarking(student)}
               className="flex items-center space-x-1"
             >
-              <UserCheck className="h-3 w-3" />
+              <UserCheck className="w-3 h-3" />
               <span>Manual</span>
             </Button>
           )}
@@ -158,7 +160,7 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
     }
   ]
 
-  // Event handlers
+  // ✅ UPDATED: Event handlers with verification
   const handleBiometricMarking = (student: Student) => {
     setSelectedStudent(student)
     setMarkingMethod('biometric')
@@ -171,37 +173,116 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
     setShowManualModal(true)
   }
 
+  // ✅ CRITICAL: Updated scan result handler with verification
   const handleBiometricScanResult = async (result: BiometricScanResult) => {
     if (!selectedStudent) return
 
-    if (result.success) {
-      await processAttendanceMarking(selectedStudent.id, result.templateData, 'BIOMETRIC')
-      setShowBiometricModal(false)
+    if (result.success && result.templateData) {
+      setIsVerifying(true)
+
+      try {
+        toast('Verifying fingerprint...', { icon: '🔍' })
+
+        // ✅ CRITICAL FIX: Parse and extract raw template
+        let liveTemplateData: string
+
+        try {
+          const parsed = JSON.parse(result.templateData)
+
+          if (!parsed.template) {
+            throw new Error('No template found in scan result')
+          }
+
+          liveTemplateData = parsed.template  // ← Extract raw template
+
+          console.log('✅ Live template extracted for verification:', {
+            templateLength: liveTemplateData.length,
+            format: parsed.format,
+            quality: parsed.metadata?.quality
+          })
+
+        } catch (parseError) {
+          console.error('❌ Failed to parse scan result:', parseError)
+          toast.error('Invalid scan data format')
+          return
+        }
+
+        // ✅ Send in same format as stored during enrollment
+        const verificationPayload = JSON.stringify({
+          template: liveTemplateData,  // ← Raw template only
+          format: 'ANSI-378',
+          metadata: {
+            quality: result.qualityScore || 90,
+            timestamp: new Date().toISOString()
+          }
+        })
+
+        console.log('📤 Sending for verification:', {
+          payloadLength: verificationPayload.length,
+          studentId: selectedStudent.id
+        })
+
+        const verificationResult = await biometricService.verifyBiometric(
+          selectedStudent.id,
+          verificationPayload  // ← Same structure as enrollment
+        )
+
+        console.log('🔐 Verification result:', verificationResult)
+
+        if (verificationResult.matched) {
+          toast.success(
+            `Fingerprint verified! Confidence: ${verificationResult.confidence.toFixed(1)}%`,
+            { duration: 3000 }
+          )
+
+          await processAttendanceMarking(
+            selectedStudent.id,
+            verificationPayload,  // ← Use formatted payload
+            'BIOMETRIC',
+            verificationResult.confidence
+          )
+
+          setShowBiometricModal(false)
+        } else {
+          toast.error(
+            `Fingerprint verification failed. Confidence: ${verificationResult.confidence.toFixed(1)}%. Please try again.`,
+            { duration: 5000 }
+          )
+        }
+      } catch (error: any) {
+        console.error('❌ Verification error:', error)
+        toast.error(error.message || 'Verification failed. Please try again.')
+      } finally {
+        setIsVerifying(false)
+      }
     } else {
-      toast.error(result.message)
+      toast.error(result.message || 'Fingerprint scan failed')
     }
   }
 
   const handleManualMarkingConfirm = async () => {
     if (!selectedStudent) return
-    
+
     await processAttendanceMarking(selectedStudent.id, undefined, 'MANUAL')
     setShowManualModal(false)
   }
 
+  // ✅ UPDATED: Process attendance with confidence score
   const processAttendanceMarking = async (
-    studentId: string, 
-    biometricData?: string, 
-    method: 'BIOMETRIC' | 'MANUAL' = 'MANUAL'
+    studentId: string,
+    biometricData?: string,
+    method: 'BIOMETRIC' | 'MANUAL' = 'MANUAL',
+    confidence?: number
   ) => {
     setIsMarking(true)
-    
+
     try {
       const markingData: MarkAttendanceData = {
         sessionId: session.id,
         studentId,
         biometricData,
         verificationMethod: method,
+        verificationConfidence: confidence,
         deviceInfo: {
           userAgent: navigator.userAgent,
           platform: navigator.platform,
@@ -211,7 +292,14 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
 
       markAttendance(markingData, {
         onSuccess: () => {
-          toast.success('Attendance marked successfully!')
+          const confidenceText = confidence
+            ? ` (Confidence: ${confidence.toFixed(1)}%)`
+            : ''
+
+          toast.success(
+            `✓ Attendance marked successfully!${confidenceText}`,
+            { duration: 4000 }
+          )
           refetchRecords()
           setSelectedStudent(null)
         },
@@ -245,7 +333,7 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button variant="secondary" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Sessions
           </Button>
           <div>
@@ -255,7 +343,7 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Button
             size="sm"
@@ -263,40 +351,37 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
             onClick={handleRefresh}
             className="flex items-center space-x-1"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
           </Button>
         </div>
       </div>
 
       {/* Session Status */}
-      <Card className={`p-4 ${
-        session.status === 'OPEN' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
-      }`}>
+      <Card className={`p-4 ${session.status === 'OPEN' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
+        }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             {session.status === 'OPEN' ? (
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="w-5 h-5 text-green-600" />
             ) : (
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
+              <AlertCircle className="w-5 h-5 text-yellow-600" />
             )}
             <div>
-              <p className={`font-medium ${
-                session.status === 'OPEN' ? 'text-green-900' : 'text-yellow-900'
-              }`}>
+              <p className={`font-medium ${session.status === 'OPEN' ? 'text-green-900' : 'text-yellow-900'
+                }`}>
                 Session Status: {session.status}
               </p>
-              <p className={`text-sm ${
-                session.status === 'OPEN' ? 'text-green-700' : 'text-yellow-700'
-              }`}>
-                {session.status === 'OPEN' 
+              <p className={`text-sm ${session.status === 'OPEN' ? 'text-green-700' : 'text-yellow-700'
+                }`}>
+                {session.status === 'OPEN'
                   ? 'Ready to mark attendance'
                   : 'Session is not currently active'
                 }
               </p>
             </div>
           </div>
-          
+
           <div className="text-right">
             <p className="text-sm font-medium text-gray-900">
               Time: {format(new Date(session.startTime), 'h:mm a')}
@@ -311,11 +396,11 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
       </Card>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="p-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <Users className="h-5 w-5 text-blue-600" />
+              <Users className="w-5 h-5 text-blue-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Students</p>
@@ -327,7 +412,7 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
         <Card className="p-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-green-100 rounded-lg">
-              <UserCheck className="h-5 w-5 text-green-600" />
+              <UserCheck className="w-5 h-5 text-green-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Present</p>
@@ -339,7 +424,7 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
         <Card className="p-4">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-yellow-100 rounded-lg">
-              <Clock className="h-5 w-5 text-yellow-600" />
+              <Clock className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Remaining</p>
@@ -368,7 +453,7 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
             {availableStudents.length} students remaining
           </p>
         </div>
-        
+
         {session.status === 'OPEN' ? (
           <Table
             columns={studentColumns}
@@ -378,48 +463,100 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
           />
         ) : (
           <div className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-            <p className="text-lg font-medium text-gray-900 mb-2">
+            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
+            <p className="mb-2 text-lg font-medium text-gray-900">
               Session Not Active
             </p>
             <p className="text-gray-600">
-              This session is currently {session.status.toLowerCase()}. 
+              This session is currently {session.status.toLowerCase()}.
               Students cannot mark attendance at this time.
             </p>
           </div>
         )}
       </Card>
 
-      {/* Biometric Marking Modal */}
+      {/* ✅ UPDATED: Biometric Marking Modal with DigitalPersonaScanner */}
       {selectedStudent && (
         <Modal
           isOpen={showBiometricModal}
           onClose={() => {
+            if (isVerifying || isMarking) {
+              toast('Please wait for the current process to complete')
+              return
+            }
             setShowBiometricModal(false)
             setSelectedStudent(null)
           }}
-          title="Biometric Attendance Marking"
+          title="Biometric Attendance Verification"
           size="lg"
+          closeOnOverlayClick={false}
         >
           <div className="space-y-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-medium text-blue-900">
-                {selectedStudent.firstName} {selectedStudent.lastName}
-              </h3>
-              <p className="text-sm text-blue-700">{selectedStudent.matricNumber}</p>
+            {/* Student Info */}
+            <div className="p-4 text-center border border-blue-200 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div className="flex items-center justify-center mb-2">
+                <Shield className="w-6 h-6 mr-2 text-blue-600" />
+                <h3 className="font-semibold text-blue-900">
+                  {selectedStudent.firstName} {selectedStudent.lastName}
+                </h3>
+              </div>
+              <p className="text-sm font-medium text-blue-700">{selectedStudent.matricNumber}</p>
+              <Badge variant="success" size="sm" className="mt-2">
+                <Fingerprint className="inline w-3 h-3 mr-1" />
+                Biometric Enrolled ✓
+              </Badge>
             </div>
 
-            <FingerprintScanner
+            {/* Instructions */}
+            <div className="p-4 border border-yellow-200 rounded-lg bg-yellow-50">
+              <p className="mb-2 text-sm font-medium text-yellow-900">
+                📋 Verification Process:
+              </p>
+              <ol className="space-y-1 text-sm text-yellow-800 list-decimal list-inside">
+                <li>Place the <strong>same finger</strong> used during enrollment on the scanner</li>
+                <li>System will compare the live scan with stored template</li>
+                <li>Match confidence must be ≥ 75% to approve attendance</li>
+                <li>Attendance will be marked automatically upon successful verification</li>
+              </ol>
+            </div>
+
+            {/* ✅ Digital Persona Scanner Component */}
+            <DigitalPersonaScanner
               onScanResult={handleBiometricScanResult}
-              disabled={isMarking}
+              disabled={isVerifying || isMarking}
+              mode="capture"
+              className="max-w-md mx-auto"
             />
 
-            {isMarking && (
-              <div className="text-center">
-                <LoadingSpinner size="sm" />
-                <p className="text-sm text-gray-600 mt-2">Marking attendance...</p>
+            {/* Status Messages */}
+            {isVerifying && (
+              <div className="p-4 text-center rounded-lg bg-blue-50">
+                <LoadingSpinner size="sm" className="mx-auto mb-2" />
+                <p className="text-sm font-medium text-blue-900">
+                  🔍 Verifying fingerprint against stored template...
+                </p>
+                <p className="mt-1 text-xs text-blue-600">
+                  Please wait, this may take a few seconds
+                </p>
               </div>
             )}
+
+            {isMarking && (
+              <div className="p-4 text-center rounded-lg bg-green-50">
+                <LoadingSpinner size="sm" className="mx-auto mb-2" />
+                <p className="text-sm font-medium text-green-900">
+                  ✓ Verification successful! Marking attendance...
+                </p>
+              </div>
+            )}
+
+            {/* Security Notice */}
+            <div className="p-3 text-xs text-gray-600 rounded-lg bg-gray-50">
+              <p className="flex items-center">
+                <Shield className="w-3 h-3 mr-1" />
+                <strong>Security:</strong> All biometric data is encrypted using AES-256-GCM encryption
+              </p>
+            </div>
           </div>
         </Modal>
       )}
@@ -436,7 +573,7 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
           size="md"
         >
           <div className="space-y-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <div className="p-4 text-center rounded-lg bg-gray-50">
               <h3 className="font-medium text-gray-900">
                 {selectedStudent.firstName} {selectedStudent.lastName}
               </h3>
@@ -446,9 +583,9 @@ const AttendanceMarking: React.FC<AttendanceMarkingProps> = ({
               </Badge>
             </div>
 
-            <div className="bg-yellow-50 p-4 rounded-lg">
+            <div className="p-4 rounded-lg bg-yellow-50">
               <p className="text-sm text-yellow-800">
-                This student hasn't enrolled their biometric data yet. 
+                This student hasn't enrolled their biometric data yet.
                 You can mark their attendance manually.
               </p>
             </div>
